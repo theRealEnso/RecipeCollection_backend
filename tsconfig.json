@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",                       // Modern JS output
+    "module": "CommonJS",                       // ESM-compatible module system
+    "moduleResolution": "Node",               // Standard Node-style resolution
+    "rootDir": "./src",                       // Your source TypeScript files
+    "outDir": "./dist",                       // Your compiled JS goes here
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true
+  },
+
+  "include": ["src"],                         // Only compile files inside src
+  "exclude": ["node_modules", "dist"]         // Don't compile these
+}
