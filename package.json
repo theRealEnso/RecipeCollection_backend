@@ -25,7 +25,8 @@
     "http-errors": "^2.0.0",
     "mongoose": "^8.15.1",
     "morgan": "^1.10.0",
-    "trim-request": "^1.0.6"
+    "trim-request": "^1.0.6",
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "@types/compression": "^1.8.0",
