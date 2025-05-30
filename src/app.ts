@@ -9,6 +9,9 @@ import cors from "cors"; // this restricts who can access the server
 import fileUpload from "express-fileupload"; // this makes uploaded files accessible from req.files
 import createHttpError from "http-errors";
 
+// import routes
+import routes from "./routes/IndexRoutes";
+
 //configure dotenv
 dotenv.config();
 
@@ -32,7 +35,7 @@ app.use(express.urlencoded({
 }));
 
 //use mongo sanitize to sanitize user data requests to prevent malicious users from manipulating the database
-app.use(mongoSanitize());
+// app.use(mongoSanitize());
 
 // use cookie parser
 app.use(cookieParser());
@@ -49,6 +52,9 @@ app.use(fileUpload({
 app.use(cors({
     // origin: "http://localhost:3000",
 }));
+
+// define our API end points for all of our routes
+app.use("/api/v1", routes);
 
 // *** error handling middleware *** //
 interface CustomError extends Error {
@@ -68,6 +74,5 @@ app.use(async (error: CustomError, req: Request, res: Response, next: NextFuncti
         }
     });
 });
-
 
 export default app;
