@@ -2,11 +2,11 @@ import { Request, Response, NextFunction} from "express";
 import dotenv from "dotenv";
 import createHttpError from "http-errors";
 
-import { createAndAddUserToDB } from "../services/UserServices";
+import { createAndAddUserToDB, signInUser } from "../services/UserServices";
 
 //import utility functions
 import { formatName } from "../utils/FormatName";
-import { generateToken } from "../utils/TokenServices";
+import { generateToken} from "../utils/TokenServices";
 
 dotenv.config();
 
@@ -66,7 +66,51 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
                 access_token: accessToken,
             }
         })
-    } catch(error){
+    } catch(error){ 
         next(error);
     };
 };
+
+export const login = async (req: Request, res: Response, next: NextFunction) => {
+    const {email, password} = req.body;
+
+    if(!email || !password) throw createHttpError.BadRequest("Missing required fields!");
+
+    try {
+        let accessToken;
+        let refreshToken;
+
+        const user = await signInUser(email, password);
+    
+        // generate access token
+        if(SECRET_ACCESS_TOKEN && SECRET_ACCESS_TOKEN.length > 0){
+            accessToken = await generateToken({id: user._id}, SECRET_ACCESS_TOKEN, "1d");
+        };
+    
+        // generate refresh token
+        if(SECRET_REFRESH_TOKEN && SECRET_REFRESH_TOKEN.length > 0){
+            refreshToken = await generateToken({id: user._id}, SECRET_REFRESH_TOKEN, "1d");
+        };
+    
+        //store refresh token in a cookie on the server
+        res.cookie("refresh_token", refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            maxAge: 30 * 24 * 60 * 60 * 1000 // set 30 day expiration date
+        });
+    
+        //respond back with user data
+        res.json({
+            message: "User successfully signed in!",
+            user: {
+                id: user._id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                access_token: accessToken,
+            }
+        });
+    } catch(error){
+        next(error);
+    }
+}

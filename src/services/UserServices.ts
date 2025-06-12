@@ -1,6 +1,7 @@
 import { UserModel } from "../models/UserModel";
 import createHttpError from "http-errors";
 import validator from "validator";
+import bcrypt from "bcrypt";
 
 export type UserData = {
     firstName: string;
@@ -61,4 +62,18 @@ export const createAndAddUserToDB = async (userData: UserData) => {
     });
 
     return user;
+};
+
+export const signInUser = async (email: string, password: string) => {
+    const foundUser = await UserModel.findOne({email});
+
+    if(!foundUser) throw createHttpError[404]("User not found!");
+
+    const hashedPassword = foundUser.password;
+
+    const verifiedPassword = await bcrypt.compare(password, hashedPassword);
+
+    if(verifiedPassword){
+        return foundUser;
+    };
 };
