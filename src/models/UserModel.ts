@@ -54,19 +54,22 @@ const userSchema = new Schema<NewUser>({
 }, {collection: "users", timestamps: true,});
 
 //hash user password using bcrypt before a user document is saved
-userSchema.pre<NewUser>("save", async function(next){
+userSchema.pre<NewUser>("save", function(next){
     if(this.$isNew){
         const saltRounds = 12;
-        const password = this.password;
-        await bcrypt.hash(password, saltRounds, (error, hashedPassword) => {
+        const plainPassword = this.password;
+
+        bcrypt.hash(plainPassword, saltRounds, (error, hash) => {
             if(error){
                 logger.error(error);
-                next(error);
-            } else {
-                this.password = hashedPassword;
-                next();
+                return next(error as Error);
             };
+
+            this.password = hash;
+            next();
         });
+    } else {
+        next();
     };
 });
 

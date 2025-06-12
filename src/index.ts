@@ -7,7 +7,7 @@ import logger from "./configs/winston-logger";
 dotenv.config();
 
 // use environment variables
-const PORT = process.env.PORT || 6000;
+const PORT = Number(process.env.PORT) || 3001;
 const { DATABASE_URL } = process.env;
 
 //enable mongoDB debug mode for development
@@ -35,7 +35,7 @@ connectToDB();
 
 // ******    set up the server     ******
 let server;
-server = app.listen(PORT, () => {
+server = app.listen(Number(PORT), "0.0.0.0", () => {
     logger.info(`server is listening on port ${PORT}!!!`);
 });
 

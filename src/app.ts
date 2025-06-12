@@ -49,9 +49,7 @@ app.use(fileUpload({
 }));
 
 //use cors 
-app.use(cors({
-    // origin: "http://localhost:3000",
-}));
+app.use(cors());
 
 // define our API end points for all of our routes
 app.use("/api/v1", routes);
