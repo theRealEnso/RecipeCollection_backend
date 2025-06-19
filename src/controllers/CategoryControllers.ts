@@ -24,11 +24,12 @@ export const getUserCategories = async (req: Request, res: Response, next: NextF
 export const addCategory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     console.log("Route hit with body:", req.body);
     try {
-        const {userId, name} = req.body;
+        const { id } = req.user;
+        const {name} = req.body;
 
-        if(!userId || ! name) throw createHttpError.BadRequest("Missing required fields userId and name!");
+        if(!id || ! name) throw createHttpError.BadRequest("Invalid user ID and/or missing required `name` field");
 
-        const newCategory = await addUserCategory(userId, name);
+        const newCategory = await addUserCategory(id, name);
 
         res.json({
             message: `Category successfully added!`,
