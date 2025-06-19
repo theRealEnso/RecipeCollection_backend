@@ -1,17 +1,16 @@
 {
   "compilerOptions": {
-    "target": "ES2020",                       // Modern JS output
-    "module": "CommonJS",                       // ESM-compatible module system
-    "moduleResolution": "Node",               // Standard Node-style resolution
-    "rootDir": "./src",                       // Your source TypeScript files
-    "outDir": "./dist",                       // Your compiled JS goes here
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "rootDir": "./src",
+    "outDir": "./dist",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true,
-    "typeRoots": ["./node_modules/@types", "./src/types"],
+    "typeRoots": ["./node_modules/@types", "./src/types"]
   },
-
-  "include": ["src"],                         // Only compile files inside src
-  "exclude": ["node_modules", "dist"]         // Don't compile these
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
 }
