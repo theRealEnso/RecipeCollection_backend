@@ -5,11 +5,11 @@ import { getCategories, addUserCategory } from "../services/CategoryServices";
 
 export const getUserCategories = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const {userId} = req.body;
+        const { id } = req.user;
 
-        if(!userId) throw createHttpError.BadRequest("Missing required userId");
+        if(!id) throw createHttpError.BadRequest("Missing required id");
     
-        const categories = await getCategories(userId);
+        const categories = await getCategories(id);
 
         res.json({
             message: "Successfully retrieved the user's categories!",
@@ -24,8 +24,8 @@ export const getUserCategories = async (req: Request, res: Response, next: NextF
 export const addCategory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     console.log("Route hit with body:", req.body);
     try {
-        const { id } = req.user;
-        const {name} = req.body;
+        const { id } = req.user; // from auth middleware
+        const {name} = req.body; // from front end
 
         if(!id || ! name) throw createHttpError.BadRequest("Invalid user ID and/or missing required `name` field");
 
