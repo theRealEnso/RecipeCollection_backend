@@ -1,8 +1,11 @@
 import { CuisineCategoryModel } from "../models/CuisineCategoryModel";
 
+//import type(s)
+import { Category } from "../types/Category";
+
 import createHttpError from "http-errors";
 
-export const getCategories = async (userId: string) => {
+export const getCategories = async (userId: string): Promise<Category[]> => {
     const userCategories = await CuisineCategoryModel.find({user: userId});
 
     if(!userCategories) throw createHttpError[404]("No categories found for the user!");
@@ -10,7 +13,7 @@ export const getCategories = async (userId: string) => {
     return userCategories;
 };
 
-export const addUserCategory = async (userId: string, name: string) => {
+export const addUserCategory = async (userId: string, name: string): Promise<Category> => {
     const addedCategory = await CuisineCategoryModel.create({
         user: userId,
         cuisineName: name,
@@ -19,4 +22,15 @@ export const addUserCategory = async (userId: string, name: string) => {
     if(!addedCategory) throw createHttpError[500]("Whoops! Something went wrong!");
 
     return addedCategory;
+};
+
+export const deleteCuisineCategory = async (userId: string, categoryId: string): Promise<void> => {
+    const deletedCategory = await CuisineCategoryModel.findOneAndDelete({
+        user: userId,
+        _id: categoryId,
+    });
+
+    if(!deletedCategory) throw createHttpError[404];
+
+    return deletedCategory;
 };

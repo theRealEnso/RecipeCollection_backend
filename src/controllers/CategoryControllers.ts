@@ -1,7 +1,11 @@
 import { Request, Response, NextFunction } from "express";
 import createHttpError from "http-errors";
 
-import { getCategories, addUserCategory } from "../services/CategoryServices";
+import { 
+    getCategories, 
+    addUserCategory, 
+    deleteCuisineCategory 
+} from "../services/CategoryServices";
 
 export const getUserCategories = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -25,7 +29,7 @@ export const addCategory = async (req: Request, res: Response, next: NextFunctio
     console.log("Route hit with body:", req.body);
     try {
         const { id } = req.user; // from auth middleware
-        const {name} = req.body; // from front end
+        const { name } = req.body; // from front end
 
         if(!id || ! name) throw createHttpError.BadRequest("Invalid user ID and/or missing required `name` field");
 
@@ -39,3 +43,20 @@ export const addCategory = async (req: Request, res: Response, next: NextFunctio
         next(error);
     };
 };
+
+export const deleteCategory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const { id } = req.user;
+        const categoryId = req.params.category_id;
+
+        const deletedCuisineCategory = await deleteCuisineCategory(id, categoryId);
+
+        res.json({
+            message: "Successfully deleted cuisine category!",
+            deletedCuisineCategory,
+        })
+
+    } catch(error){
+        next(error);
+    };
+}

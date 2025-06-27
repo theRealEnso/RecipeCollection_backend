@@ -3,10 +3,10 @@ import mongoose, {Document} from "mongoose";
 const {Schema} = mongoose;
 const {ObjectId} = mongoose.Schema.Types;
 
-export type Category = {
-    user: string;
-    category: string;
-};
+// export type Category = {
+//     user: string;
+//     category: string;
+// };
 
 const cuisineCategorySchema = new Schema({
     user: {
