@@ -24,13 +24,29 @@ export const addUserCategory = async (userId: string, name: string): Promise<Cat
     return addedCategory;
 };
 
+export const updateCuisineCategory = async (userId: string, categoryId: string, userText: string) => {
+    const updatedCategory = await CuisineCategoryModel.findOneAndUpdate(
+        {
+            user: userId,
+            _id: categoryId,
+        },
+        {
+            cuisineName: userText,
+        },
+    );
+
+    if(!updatedCategory) throw createHttpError[500];
+
+    return updatedCategory;
+};
+
 export const deleteCuisineCategory = async (userId: string, categoryId: string): Promise<void> => {
     const deletedCategory = await CuisineCategoryModel.findOneAndDelete({
         user: userId,
         _id: categoryId,
     });
 
-    if(!deletedCategory) throw createHttpError[404];
+    if(!deletedCategory) throw createHttpError[500];
 
     return deletedCategory;
 };

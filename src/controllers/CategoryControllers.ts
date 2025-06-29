@@ -1,10 +1,14 @@
 import { Request, Response, NextFunction } from "express";
 import createHttpError from "http-errors";
 
+//import types
+// import { Category } from "../types/Category";
+
 import { 
     getCategories, 
-    addUserCategory, 
-    deleteCuisineCategory 
+    addUserCategory,
+    updateCuisineCategory, 
+    deleteCuisineCategory, 
 } from "../services/CategoryServices";
 
 export const getUserCategories = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -39,6 +43,23 @@ export const addCategory = async (req: Request, res: Response, next: NextFunctio
             message: `Category successfully added!`,
             newCategory,
         });
+    } catch(error){
+        next(error);
+    };
+};
+
+export const editCategory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const { id } = req.user;
+        const { updatedText } = req.body
+        const  categoryId  = req.params.category_id;
+
+        const updatedCuisineCategory = await updateCuisineCategory(id, categoryId, updatedText);
+
+        res.json({
+            message: "Successfully updated category!",
+            updatedCuisineCategory,
+        })
     } catch(error){
         next(error);
     };
