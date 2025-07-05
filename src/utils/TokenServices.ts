@@ -1,5 +1,6 @@
 import jwt, { Secret} from "jsonwebtoken";
 
+// typescript types
 import { User } from "../types/User";
 
 //use json web tokens to generate access and refresh tokens for authenticated user
@@ -20,13 +21,17 @@ export const generateToken = async (payload: User, secretToken: Secret, expirati
 
 // jwt.verify(token, secretOrPublicKey, [options, callback])
 // verifying a token will result in receiving the decoded data (like the user ID)
-export const verifyToken = async (token: string, secretToken: Secret) => {
+export const verifyToken = async (token: string, secretToken: Secret): Promise<User> => {
     return new Promise((resolve, reject) => {
         jwt.verify(token, secretToken, (error, decodedData) => {
             if(error){
-                reject(error);
+                if(error.name === "TokenExpiredError"){
+                    reject({errorName: "TokenExpiredError", message: "Access token expired!"})
+                } else {
+                    reject(error);
+                }
             } else {
-                resolve(decodedData);
+                resolve(decodedData as User);
             }
         });
     });

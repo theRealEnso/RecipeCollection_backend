@@ -10,7 +10,7 @@ import { verifyToken } from "../utils/TokenServices";
 
 dotenv.config();
 
-const {SECRET_ACCESS_TOKEN} = process.env;
+const { SECRET_ACCESS_TOKEN } = process.env;
 
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -36,7 +36,11 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
         } else {
             throw createHttpError.Unauthorized("Invalid token payload.");
         }
-    } catch(error){
+    } catch(error: any){
+        if(error.name === "TokenExpiredError"){
+            return next(createHttpError.Unauthorized("Access token expired!"));
+        };
+        
         logger.error(error);
         next(error);
     }

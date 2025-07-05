@@ -77,3 +77,11 @@ export const signInUser = async (email: string, password: string) => {
         return foundUser;
     };
 };
+
+export const findUser = async (id: string) => {
+    const foundUser = await UserModel.findById(id);
+
+    if(!foundUser) throw createHttpError[404]("User not found!");
+
+    return foundUser;
+};

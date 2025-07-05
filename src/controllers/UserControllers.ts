@@ -1,12 +1,13 @@
 import { Request, Response, NextFunction} from "express";
 import dotenv from "dotenv";
 import createHttpError from "http-errors";
+import { Secret } from "jsonwebtoken";
 
-import { createAndAddUserToDB, signInUser } from "../services/UserServices";
+import { createAndAddUserToDB, signInUser, findUser } from "../services/UserServices";
 
 //import utility functions
 import { formatName } from "../utils/FormatName";
-import { generateToken} from "../utils/TokenServices";
+import { generateToken, verifyToken, } from "../utils/TokenServices";
 
 dotenv.config();
 
@@ -48,13 +49,6 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
             refreshToken = await generateToken({id: newUser._id}, SECRET_REFRESH_TOKEN, "30d");
         };
     
-        //store refresh token in a cookie on the server
-        res.cookie("refresh_token", refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            maxAge: 30 * 24 * 60 * 60 * 1000 // set 30 day expiration date
-        });
-    
         //respond back with a user object containing user data
         res.json({
             message: "Successfully registered the user!",
@@ -64,6 +58,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
                 lastName: newUser.lastName,
                 email: newUser.email,
                 access_token: accessToken,
+                refresh_token: refreshToken,
             }
         })
     } catch(error){ 
@@ -92,13 +87,6 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
             refreshToken = await generateToken({id: user._id}, SECRET_REFRESH_TOKEN, "1d");
         };
     
-        //store refresh token in a cookie on the server
-        res.cookie("refresh_token", refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            maxAge: 30 * 24 * 60 * 60 * 1000 // set 30 day expiration date
-        });
-    
         //respond back with user data
         res.json({
             message: "User successfully signed in!",
@@ -108,9 +96,37 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
                 lastName: user.lastName,
                 email: user.email,
                 access_token: accessToken,
+                refresh_token: refreshToken,
             }
         });
     } catch(error){
         next(error);
     }
-}
+};
+
+export const refreshUserToken = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+    try {
+        const refreshToken = req.cookies?.refreshToken;
+
+        if(!refreshToken) throw createHttpError.Unauthorized("Refresh token is missing!");
+
+        const user = await verifyToken(refreshToken, process.env.SECRET_REFRESH_TOKEN as Secret);
+
+        if(user && user.id){
+            const userInDB = await findUser(user.id);
+            if(userInDB){
+                const newAccessToken = await generateToken({id: userInDB._id}, process.env.SECRET_ACCESS_TOKEN as Secret, "1d");
+                return res.json({
+                    access_token: newAccessToken,
+                });
+            } else {
+                throw createHttpError.Unauthorized("User not found!");
+            }
+        } else {
+            throw createHttpError.Unauthorized("Invalid refresh token payload");
+        }
+        
+    } catch(error){
+        next(error);
+    }
+};
