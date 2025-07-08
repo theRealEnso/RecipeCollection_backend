@@ -25,11 +25,7 @@ export const verifyToken = async (token: string, secretToken: Secret): Promise<U
     return new Promise((resolve, reject) => {
         jwt.verify(token, secretToken, (error, decodedData) => {
             if(error){
-                if(error.name === "TokenExpiredError"){
-                    reject({errorName: "TokenExpiredError", message: "Access token expired!"})
-                } else {
-                    reject(error);
-                }
+                reject(error);
             } else {
                 resolve(decodedData as User);
             }

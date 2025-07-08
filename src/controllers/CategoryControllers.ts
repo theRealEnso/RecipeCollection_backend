@@ -13,7 +13,7 @@ import {
 
 export const getUserCategories = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const { id } = req.user;
+        const { id } = req.user; // from auth middleware
 
         if(!id) throw createHttpError.BadRequest("Missing required id");
     

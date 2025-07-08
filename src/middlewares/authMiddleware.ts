@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { Secret } from "jsonwebtoken";
+import { Secret, JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
 import createHttpError from "http-errors";
 import logger from "../configs/winston-logger";
 
@@ -36,12 +36,19 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
         } else {
             throw createHttpError.Unauthorized("Invalid token payload.");
         }
-    } catch(error: any){
-        if(error.name === "TokenExpiredError"){
-            return next(createHttpError.Unauthorized("Access token expired!"));
+    } catch(error: any){ // error comes in form of an object--can add extra properties onto this object
+        if(error instanceof TokenExpiredError){
+            (error as any).status = 401; // add `status property, set to 401
+            error.message = "Access token has expired!" // add a message property
         };
         
+        if(error instanceof JsonWebTokenError){
+            (error as any).status = 401;
+            error.message = "Invalid access token!"
+            return next(createHttpError[401]("Invalid access token!"));
+        };
+
         logger.error(error);
-        next(error);
+        next(error); // pass error object with additional status and message properties into global error handling middleware
     }
 };

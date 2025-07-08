@@ -57,9 +57,9 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
                 firstName: newUser.firstName,
                 lastName: newUser.lastName,
                 email: newUser.email,
-                access_token: accessToken,
-                refresh_token: refreshToken,
-            }
+            },
+            access_token: accessToken,
+            refresh_token: refreshToken,
         })
     } catch(error){ 
         next(error);
@@ -79,12 +79,12 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     
         // generate access token
         if(SECRET_ACCESS_TOKEN && SECRET_ACCESS_TOKEN.length > 0){
-            accessToken = await generateToken({id: user._id}, SECRET_ACCESS_TOKEN, "1d");
+            accessToken = await generateToken({id: user._id}, SECRET_ACCESS_TOKEN, "120000");
         };
     
         // generate refresh token
         if(SECRET_REFRESH_TOKEN && SECRET_REFRESH_TOKEN.length > 0){
-            refreshToken = await generateToken({id: user._id}, SECRET_REFRESH_TOKEN, "1d");
+            refreshToken = await generateToken({id: user._id}, SECRET_REFRESH_TOKEN, "30d");
         };
     
         //respond back with user data
@@ -95,9 +95,9 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
                 firstName: user.firstName,
                 lastName: user.lastName,
                 email: user.email,
-                access_token: accessToken,
-                refresh_token: refreshToken,
-            }
+            },
+            access_token: accessToken,
+            refresh_token: refreshToken,
         });
     } catch(error){
         next(error);
@@ -106,11 +106,11 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
 export const refreshUserToken = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
     try {
-        const refreshToken = req.cookies?.refreshToken;
+        const { refresh_token } = req.body;
 
-        if(!refreshToken) throw createHttpError.Unauthorized("Refresh token is missing!");
+        if(!refresh_token) throw createHttpError.Unauthorized("Refresh token is missing!");
 
-        const user = await verifyToken(refreshToken, process.env.SECRET_REFRESH_TOKEN as Secret);
+        const user = await verifyToken(refresh_token, process.env.SECRET_REFRESH_TOKEN as Secret);
 
         if(user && user.id){
             const userInDB = await findUser(user.id);

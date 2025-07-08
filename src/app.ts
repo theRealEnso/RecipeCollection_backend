@@ -8,6 +8,7 @@ import compression from "compression"; // compresses response bodies for all inc
 import cors from "cors"; // this restricts who can access the server
 import fileUpload from "express-fileupload"; // this makes uploaded files accessible from req.files
 import createHttpError from "http-errors";
+import logger from "./configs/winston-logger";
 
 // import routes
 import routes from "./routes/IndexRoutes";
@@ -64,13 +65,21 @@ app.use(async (req: Request, res: Response, next: NextFunction) => {
 });
 
 app.use(async (error: CustomError, req: Request, res: Response, next: NextFunction) => {
-    res.status(error.status || 500);
-    res.send({
+    const statusCode = error.status || 500;
+
+    res.status(statusCode).json({
         error: {
-            status: error.status || 500,
-            message: error.message,
-        }
+            status: statusCode,
+            message: error.message || "Internal server error!"
+        },
     });
+
+    // res.send({
+    //     error: {
+    //         status: error.status || 500,
+    //         message: error.message,
+    //     }
+    // });
 });
 
 export default app;
