@@ -22,11 +22,11 @@ export const getUserCategories = async (req: Request, res: Response, next: NextF
         res.json({
             message: "Successfully retrieved the user's categories!",
             categories,
-        })
+        });
 
     } catch(error){
         next(error);
-    }
+    };
 };
 
 export const addCategory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {

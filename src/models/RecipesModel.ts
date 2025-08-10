@@ -3,23 +3,24 @@ import mongoose from "mongoose";
 const { Schema } = mongoose;
 const { ObjectId } = mongoose.Schema.Types;
 
-const recipeComponentSchema = new Schema ({
-    title: {
-        type: String,
-        required: true,
-        trim: true,
-    },
 
-    ingredients: {
-        type: [String],
-        required: true,
-    },
+// const recipeComponentSchema = new Schema ({
+//     title: {
+//         type: String,
+//         required: true,
+//         trim: true,
+//     },
 
-    cookingDirections: {
-        type: [String],
-        required: true,
-    }
-})
+//     ingredients: {
+//         type: [String],
+//         required: true,
+//     },
+
+//     cookingDirections: {
+//         type: [String],
+//         required: true,
+//     }
+// });
 
 const recipesSchema = new Schema(
     {   
@@ -29,19 +30,18 @@ const recipesSchema = new Schema(
             required: true,
         },
 
+        categoryName: {
+            type: String,
+        },
+
         recipeOwner: {
-            firstName: {
+            name: {
                 type: String,
                 trim: true,
             },
-
-            lastName: {
-                type: String,
-                trim: true,
-            }
         },
 
-        dishName: {
+        nameOfDish: {
             type: String,
             required: true,
             trim: true,
@@ -59,13 +59,7 @@ const recipesSchema = new Schema(
             trim: true,
         },
 
-        timeToPrep: {
-            type: String,
-            required: true,
-            trim: true,
-        },
-
-        yield: {
+        numberOfServings: {
             type: String,
             required: true,
             trim: true,
@@ -76,10 +70,26 @@ const recipesSchema = new Schema(
             trim: true,
         },
 
-        components: {
-            type: [recipeComponentSchema],
-            required: true,
+        ingredients: {
+            type: [],
         },
+
+        subIngredients: {
+            type: [],
+        },
+
+        cookingDirections: {
+            type: [String],
+        },
+
+        subDirections: {
+            type: [],
+        }
+
+        // components: {
+        //     type: [recipeComponentSchema],
+        //     required: true,
+        // },
     },
 
     {

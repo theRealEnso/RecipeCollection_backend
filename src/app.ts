@@ -55,7 +55,7 @@ app.use(cors());
 // define our API end points for all of our routes
 app.use("/api/v1", routes);
 
-// *** error handling middleware *** //
+// *** define our global error handling middleware *** //
 interface CustomError extends Error {
     status?: number;
 };

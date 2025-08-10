@@ -41,7 +41,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     
         //generate access token
         if(SECRET_ACCESS_TOKEN && SECRET_ACCESS_TOKEN.length > 0){
-            accessToken = await generateToken({id: newUser._id}, SECRET_ACCESS_TOKEN, "1d");
+            accessToken = await generateToken({id: newUser._id}, SECRET_ACCESS_TOKEN, "3600000");
         };
     
         //generate refresh token
@@ -79,7 +79,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     
         // generate access token
         if(SECRET_ACCESS_TOKEN && SECRET_ACCESS_TOKEN.length > 0){
-            accessToken = await generateToken({id: user._id}, SECRET_ACCESS_TOKEN, "120000");
+            accessToken = await generateToken({id: user._id}, SECRET_ACCESS_TOKEN, "36000000"); // 1 hr expressed in milliseconds
         };
     
         // generate refresh token
