@@ -26,6 +26,7 @@ export type RecipeData = {
     timeToCook: string;
     numberOfServings: string;
     specialEquipment: string[],
+    imageUri: string;
     ingredients: string[];
     subIngredients: SubIngredient[];
     cookingDirections: string[];

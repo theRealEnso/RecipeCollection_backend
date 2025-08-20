@@ -35,10 +35,8 @@ const recipesSchema = new Schema(
         },
 
         recipeOwner: {
-            name: {
-                type: String,
-                trim: true,
-            },
+            type: String,
+            trim: true,
         },
 
         nameOfDish: {
@@ -68,6 +66,10 @@ const recipesSchema = new Schema(
         specialEquipment: {
             type: String,
             trim: true,
+        },
+
+        imageUri: {
+            type: String,
         },
 
         ingredients: {
