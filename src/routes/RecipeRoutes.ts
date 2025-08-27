@@ -5,11 +5,18 @@ import trimRequest from "trim-request";
 import { authMiddleware } from "../middlewares/authMiddleware";
 
 // import controller functions
-import { createRecipe, getAllCategoryRecipes } from "../controllers/RecipeControllers";
+import { 
+    getAllCategoryRecipes, 
+    getRecipeDetails, 
+    createRecipe, 
+    createCloudinaryImageUrl, 
+} from "../controllers/RecipeControllers";
 
 const router = express.Router();
 
-router.route("/create-recipe").post(trimRequest.all, authMiddleware, createRecipe);
 router.route("/get-category-recipes/:categoryId").get(trimRequest.all, authMiddleware, getAllCategoryRecipes);
+router.route("/get-category-recipes/recipe/:recipeId").get(trimRequest.all, authMiddleware, getRecipeDetails);
+router.route("/create-recipe").post(trimRequest.all, authMiddleware, createRecipe);
+router.route("/create-cloudinary-image-url").post(trimRequest.all, authMiddleware, createCloudinaryImageUrl);
 
 export default router;

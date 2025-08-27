@@ -8,6 +8,7 @@ import compression from "compression"; // compresses response bodies for all inc
 import cors from "cors"; // this restricts who can access the server
 import fileUpload from "express-fileupload"; // this makes uploaded files accessible from req.files
 import createHttpError from "http-errors";
+import bodyParser from "body-parser";
 import logger from "./configs/winston-logger";
 
 // import routes
@@ -28,7 +29,14 @@ if(process.env.NODE_ENV !== "production"){
 app.use(helmet());
 
 //parse JSON request body
-app.use(express.json());
+app.use(express.json({
+    limit: "10mb",
+}));
+
+app.use(bodyParser.urlencoded({
+    limit: "10mb",
+    extended: true,
+}));
 
 //parse JSON request url
 app.use(express.urlencoded({
