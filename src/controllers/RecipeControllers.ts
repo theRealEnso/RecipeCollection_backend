@@ -107,6 +107,34 @@ export const createRecipe = async (req: Request, res: Response, next: NextFuncti
     }
 };
 
+//generating signature to upload image to cloudinary using SIGNED preset
+export const getCloudinarySignature = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const timestamp = Math.floor(new Date().getTime() / 1000);
+        
+        const signature = cloudinary.utils.api_sign_request(
+            {
+                timestamp,
+                folder: "recipes",
+                upload_preset: process.env.CLOUDINARY_SIGNED_UPLOAD_PRESET,
+            },
+            process.env.CLOUDINARY_API_SECRET as string,
+        );
+
+        res.json({
+            timestamp,
+            signature,
+            apikey: process.env.CLOUDINARY_API_KEY,
+            cloudname: process.env.CLOUDINARY_API_NAME,
+            uploadPreset: process.env.CLOUDINARY_SIGNED_UPLOAD_PRESET,
+            folder: "recipes",
+        });
+    } catch(error){
+        next(error);
+    };
+};
+
+//uploading image to cloudinary using UNSIGNED preset
 export const createCloudinaryImageUrl = async (req: Request, res: Response, next: NextFunction) => {
     try {
         // console.log(process.env.CLOUDINARY_API_SECRET);
@@ -127,7 +155,7 @@ export const createCloudinaryImageUrl = async (req: Request, res: Response, next
         }
 
         const result = await cloudinary.uploader.upload(base64, {
-            upload_preset: process.env.CLOUDINARY_UNSIGNED_UPLOAD_PRESET_KEY,
+            upload_preset: process.env.CLOUDINARY_UNSIGNED_UPLOAD_PRESET,
         });
 
         console.log("Cloudinary result: ", result)
@@ -146,5 +174,24 @@ export const createCloudinaryImageUrl = async (req: Request, res: Response, next
             error: error.message || "Something went wrong",
             cloudinaryError: error,
         });
-    }
-}
+    };
+};
+
+
+// const signuploadform = () => {
+//     const timestamp = Math.round((new Date).getTime()/1000);
+
+//   const signature = cloudinary.utils.api_sign_request(
+//         {
+//             timestamp: timestamp,
+//             eager: 'c_pad,h_300,w_400|c_crop,h_200,w_260',
+//             folder: 'signed_upload_demo_form'
+//         }, apiSecret
+//     );
+
+//   return { timestamp, signature }
+// }
+
+// module.exports = {
+//   signuploadform
+// }
