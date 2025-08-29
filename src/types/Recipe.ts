@@ -5,11 +5,11 @@ export type SubIngredient = {
     ingredient_id: string;
 };
 
-export type RecipeSubDirections = {
+export type RecipeSubInstructions = {
     sublistName: string;
     sublistId: string;
-    direction: string;
-    direction_id: string;
+    instruction: string;
+    instruction_id: string;
 };
 
 export type ListNameProps = {
@@ -26,9 +26,9 @@ export type RecipeData = {
     timeToCook: string;
     numberOfServings: string;
     specialEquipment: string[],
-    imageUri: string;
+    imageUrl: string;
     ingredients: string[];
     subIngredients: SubIngredient[];
-    cookingDirections: string[];
-    subDirections: RecipeSubDirections[];
+    cookingInstructions: string[];
+    subInstructions: RecipeSubInstructions[];
 };

@@ -60,11 +60,11 @@ export const createRecipe = async (req: Request, res: Response, next: NextFuncti
             timeToCook,
             numberOfServings,
             specialEquipment,
-            imageUri,
+            imageUrl,
             ingredients,
             subIngredients,
-            cookingDirections,
-            subDirections,
+            cookingInstructions,
+            subInstructions,
         } = req.body;
 
         if(
@@ -76,8 +76,8 @@ export const createRecipe = async (req: Request, res: Response, next: NextFuncti
             !numberOfServings ||
             !ingredients || 
             !subIngredients ||
-            !cookingDirections || 
-            !subDirections
+            !cookingInstructions || 
+            !subInstructions
         ) {
             throw createHttpError.BadRequest("Missing required fields!");
         };
@@ -91,11 +91,11 @@ export const createRecipe = async (req: Request, res: Response, next: NextFuncti
             timeToCook,
             numberOfServings,
             specialEquipment,
-            imageUri,
+            imageUrl,
             ingredients,
             subIngredients,
-            cookingDirections,
-            subDirections,
+            cookingInstructions,
+            subInstructions,
         });
 
         res.json({
@@ -176,22 +176,3 @@ export const createCloudinaryImageUrl = async (req: Request, res: Response, next
         });
     };
 };
-
-
-// const signuploadform = () => {
-//     const timestamp = Math.round((new Date).getTime()/1000);
-
-//   const signature = cloudinary.utils.api_sign_request(
-//         {
-//             timestamp: timestamp,
-//             eager: 'c_pad,h_300,w_400|c_crop,h_200,w_260',
-//             folder: 'signed_upload_demo_form'
-//         }, apiSecret
-//     );
-
-//   return { timestamp, signature }
-// }
-
-// module.exports = {
-//   signuploadform
-// }

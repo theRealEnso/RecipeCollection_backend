@@ -16,7 +16,7 @@ const { ObjectId } = mongoose.Schema.Types;
 //         required: true,
 //     },
 
-//     cookingDirections: {
+//     cookingInstructions: {
 //         type: [String],
 //         required: true,
 //     }
@@ -80,7 +80,7 @@ const recipesSchema = new Schema(
             type: [],
         },
 
-        cookingDirections: {
+        cookingInstructions: {
             type: [String],
         },
 

@@ -9,13 +9,6 @@ import { RecipeData } from "../types/Recipe";
 
 import createHttpError from "http-errors";
 
-import dotenv from "dotenv";
-dotenv.config();
-
-const cloudinary_key = process.env.CLOUDINARY_UNSIGNED_UPLOAD_PRESET_KEY;
-const cloudinary_name = process.env.CLOUDINARY_API_NAME;
-
-
 export const getRecipes = async (categoryId: string) => {
     // string needs to be converted to ObjectId because thats how cuisineCategory is stored in our model/schema and DB
     const categoryObjectId = new mongoose.Types.ObjectId(categoryId);
@@ -49,11 +42,11 @@ export const createNewRecipe = async (recipeData: RecipeData) => {
         timeToCook,
         numberOfServings,
         specialEquipment,
-        imageUri,
+        imageUrl,
         ingredients,
         subIngredients,
-        cookingDirections,
-        subDirections,
+        cookingInstructions,
+        subInstructions,
     } = recipeData;
 
     const createdRecipe = await RecipesModel.create({
@@ -65,11 +58,11 @@ export const createNewRecipe = async (recipeData: RecipeData) => {
         timeToCook,
         numberOfServings,
         specialEquipment: specialEquipment && specialEquipment.length > 0 ? specialEquipment : "",
-        imageUri,
+        imageUrl,
         ingredients: ingredients && ingredients.length > 0 ? ingredients : [],
         subIngredients: subIngredients && subIngredients.length > 0 ? subIngredients : [],
-        cookingDirections: cookingDirections && cookingDirections.length > 0 ? cookingDirections : [],
-        subDirections: subDirections && subDirections.length > 0 ? subDirections : [],
+        cookingInstructions: cookingInstructions && cookingInstructions.length > 0 ? cookingInstructions : [],
+        subInstructions: subInstructions && subInstructions.length > 0 ? subInstructions : [],
     });
 
     if(!createdRecipe) throw createHttpError[500]("Something went wrong!");
