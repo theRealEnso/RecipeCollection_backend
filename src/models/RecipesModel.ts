@@ -3,25 +3,6 @@ import mongoose from "mongoose";
 const { Schema } = mongoose;
 const { ObjectId } = mongoose.Schema.Types;
 
-
-// const recipeComponentSchema = new Schema ({
-//     title: {
-//         type: String,
-//         required: true,
-//         trim: true,
-//     },
-
-//     ingredients: {
-//         type: [String],
-//         required: true,
-//     },
-
-//     cookingInstructions: {
-//         type: [String],
-//         required: true,
-//     }
-// });
-
 const recipesSchema = new Schema(
     {   
         cuisineCategory: {
@@ -68,7 +49,7 @@ const recipesSchema = new Schema(
             trim: true,
         },
 
-        imageUri: {
+        imageUrl: {
             type: String,
         },
 
@@ -84,14 +65,13 @@ const recipesSchema = new Schema(
             type: [String],
         },
 
-        subDirections: {
+        subInstructions: {
+            type: [],
+        },
+
+        sublists: {
             type: [],
         }
-
-        // components: {
-        //     type: [recipeComponentSchema],
-        //     required: true,
-        // },
     },
 
     {

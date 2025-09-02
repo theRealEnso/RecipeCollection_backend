@@ -31,4 +31,5 @@ export type RecipeData = {
     subIngredients: SubIngredient[];
     cookingInstructions: string[];
     subInstructions: RecipeSubInstructions[];
+    sublists: string[],
 };

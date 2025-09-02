@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import axios from "axios";
 
 import { 
     getRecipes, 
@@ -65,6 +66,7 @@ export const createRecipe = async (req: Request, res: Response, next: NextFuncti
             subIngredients,
             cookingInstructions,
             subInstructions,
+            sublists,
         } = req.body;
 
         if(
@@ -96,6 +98,7 @@ export const createRecipe = async (req: Request, res: Response, next: NextFuncti
             subIngredients,
             cookingInstructions,
             subInstructions,
+            sublists,
         });
 
         res.json({
@@ -106,6 +109,47 @@ export const createRecipe = async (req: Request, res: Response, next: NextFuncti
         next(error);
     }
 };
+
+export const generateRecipeFromImage = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { base64image } = req.body;
+
+        const { data } = await axios.post(`http://192.168.1.223:11434/api/generate`,
+             {
+                model: "llava:7b",
+                prompt: `You are a food recipe generator AI. Analyze this image and return a recipe in **valid JSON only** with the following fields:
+                {
+                    "nameOfDish": "string",
+                    "difficultyLevel": "easy | intermediate | hard",
+                    "timeToCook": "string (e.g. 30 minutes)",
+                    "numberOfServings": "string (e.g. 4)",
+                    "specialEquipment": "string or empty",
+                    "ingredients": [ {nameOfIngredient: "ingredient 1", ingredient_id: generateUniqueId}, {nameOfIngredient: "ingredient 1", ingredient_id: generateUniqueId}, ... ],
+                    "cookingInstructions": [ {instruction: "step 1", instruction_id: generateUniqueId}, {instruction: "step 2", instruction_id: generateUniqueId}, ... ],
+                    "sublists": [ {name: "sublist1 name", id: generateUniqueId }, {name: "sublist2 name", id: generateUniqueId }, ... ],
+                    "subIngredients": [
+                         {sublistName: "sublist name", sublistId: "matching string value from sublists", nameOfIngredient: "ingredient 1", ingredient_id: generateUniqueId}, {sublistName: "sublist name", sublistId: "matching string value from sublists", nameOfIngredient: "ingredient 2", ingredient_id: generateUniqueId}, .... 
+                    ],
+                    "subInstructions": [
+                        { sublistName: "sublist name", sublistId: "matching string value from sublists", instruction: "step 1", instruction_id: generateUniqueId},  { sublistName: "sublist name", sublistId: "matching string value from sublists", instruction: "step 2", instruction_id: generateUniqueId}... }
+                    ]
+                }
+
+                If the recipe you generate is simple, then leave sublists, subIngredients, and subInstructions empty; only populate the cookingInstructions array with step-by-step cooking instructions that you generate, and only populate the ingredients array with whatever ingredients that you generate. To be clear, each cooking instruction must be an object that contains properties/keys "instruction" and "instruction_id" where the corresponding values are the cooking instruction you generate, and a randomly generated id, respectively. Otherwise, if you generate a recipe that is more complex, then cookingInstructions and ingredients will be empty, but populate sublists, subIngredients, and subInstructions-- each ingredient and cooking instruction you generate must be tied together with its respective sublist.
+                Return **only valid JSON** — no extra text.
+                `,
+                images: [base64image],
+             }, {
+            headers: {
+                "Content-Type": "application/json",
+            }, 
+        });
+
+        console.log(data);
+    } catch(error){
+        next(error);
+    }
+}
 
 //generating signature to upload image to cloudinary using SIGNED preset
 export const getCloudinarySignature = async (req: Request, res: Response, next: NextFunction) => {

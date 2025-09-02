@@ -47,6 +47,7 @@ export const createNewRecipe = async (recipeData: RecipeData) => {
         subIngredients,
         cookingInstructions,
         subInstructions,
+        sublists
     } = recipeData;
 
     const createdRecipe = await RecipesModel.create({
@@ -63,6 +64,7 @@ export const createNewRecipe = async (recipeData: RecipeData) => {
         subIngredients: subIngredients && subIngredients.length > 0 ? subIngredients : [],
         cookingInstructions: cookingInstructions && cookingInstructions.length > 0 ? cookingInstructions : [],
         subInstructions: subInstructions && subInstructions.length > 0 ? subInstructions : [],
+        sublists,
     });
 
     if(!createdRecipe) throw createHttpError[500]("Something went wrong!");
