@@ -10,7 +10,8 @@ import {
     getRecipeDetails, 
     createRecipe, 
     createCloudinaryImageUrl,
-    getCloudinarySignature 
+    getCloudinarySignature,
+    generateRecipeFromImage, 
 } from "../controllers/RecipeControllers";
 
 const router = express.Router();
@@ -20,5 +21,6 @@ router.route("/get-category-recipes/recipe/:recipeId").get(trimRequest.all, auth
 router.route("/get-cloudinary-signature").get(trimRequest.all, authMiddleware, getCloudinarySignature);
 router.route("/create-recipe").post(trimRequest.all, authMiddleware, createRecipe);
 router.route("/create-cloudinary-image-url").post(trimRequest.all, authMiddleware, createCloudinaryImageUrl);
+router.route("/generate-recipe-from-image").post(trimRequest.all, authMiddleware, generateRecipeFromImage);
 
 export default router;

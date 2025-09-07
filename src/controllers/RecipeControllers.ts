@@ -112,7 +112,8 @@ export const createRecipe = async (req: Request, res: Response, next: NextFuncti
 
 export const generateRecipeFromImage = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { base64image } = req.body;
+        const { base64Image } = req.body;
+        // console.log(base64Image);
 
         const { data } = await axios.post(`http://192.168.1.223:11434/api/generate`,
              {
@@ -121,7 +122,7 @@ export const generateRecipeFromImage = async (req: Request, res: Response, next:
                 {
                     "nameOfDish": "string",
                     "difficultyLevel": "easy | intermediate | hard",
-                    "timeToCook": "string (e.g. 30 minutes)",
+                    "timeToCook": "string (e.g. 30 minutes)",s
                     "numberOfServings": "string (e.g. 4)",
                     "specialEquipment": "string or empty",
                     "ingredients": [ {nameOfIngredient: "ingredient 1", ingredient_id: generateUniqueId}, {nameOfIngredient: "ingredient 1", ingredient_id: generateUniqueId}, ... ],
@@ -138,18 +139,34 @@ export const generateRecipeFromImage = async (req: Request, res: Response, next:
                 If the recipe you generate is simple, then leave sublists, subIngredients, and subInstructions empty; only populate the cookingInstructions array with step-by-step cooking instructions that you generate, and only populate the ingredients array with whatever ingredients that you generate. To be clear, each cooking instruction must be an object that contains properties/keys "instruction" and "instruction_id" where the corresponding values are the cooking instruction you generate, and a randomly generated id, respectively. Otherwise, if you generate a recipe that is more complex, then cookingInstructions and ingredients will be empty, but populate sublists, subIngredients, and subInstructions-- each ingredient and cooking instruction you generate must be tied together with its respective sublist.
                 Return **only valid JSON** — no extra text.
                 `,
-                images: [base64image],
+                images: [base64Image],
+                stream: false,
              }, {
             headers: {
                 "Content-Type": "application/json",
             }, 
         });
 
-        console.log(data);
+        let rawResponse = data.response;
+        
+        rawResponse = rawResponse.replace(/```json|```/g, "").trim(); // find all matches of ```json or ``` and replace with empty string, then trim removes empty spaces
+
+        let recipe;
+        try {
+            recipe = JSON.parse(rawResponse);
+        } catch(error){
+            console.error("Failed to parse JSON:", rawResponse);
+            throw error;
+        };
+
+        res.json({
+            message: "successfully generated a recipe based on the selected image!",
+            recipe,
+        });
     } catch(error){
         next(error);
     }
-}
+};
 
 //generating signature to upload image to cloudinary using SIGNED preset
 export const getCloudinarySignature = async (req: Request, res: Response, next: NextFunction) => {
