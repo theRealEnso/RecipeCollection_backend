@@ -5,7 +5,7 @@ import trimRequest from "trim-request";
 import { authMiddleware } from "../middlewares/authMiddleware";
 
 // import controller functions
-import { 
+import {
     getAllCategoryRecipes, 
     getRecipeDetails, 
     createRecipe, 

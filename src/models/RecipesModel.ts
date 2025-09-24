@@ -62,7 +62,7 @@ const recipesSchema = new Schema(
         },
 
         cookingInstructions: {
-            type: [String],
+            type: [],
         },
 
         subInstructions: {

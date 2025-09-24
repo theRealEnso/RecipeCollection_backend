@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import axios from "axios";
 
-import { 
+import {
     getRecipes, 
     getDetailedRecipe, 
     createNewRecipe,
@@ -10,6 +10,7 @@ import {
 import cloudinary from "../configs/cloudinary";
 
 import createHttpError from "http-errors";
+
 
 export const getAllCategoryRecipes = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -70,16 +71,16 @@ export const createRecipe = async (req: Request, res: Response, next: NextFuncti
         } = req.body;
 
         if(
-            !categoryName ||
-            !categoryId ||
-            !nameOfDish || 
-            !difficultyLevel ||
-            !timeToCook ||
-            !numberOfServings ||
-            !ingredients || 
-            !subIngredients ||
-            !cookingInstructions || 
-            !subInstructions
+            !categoryName.length ||
+            !categoryId.length ||
+            !nameOfDish.length || 
+            !difficultyLevel.length ||
+            !timeToCook.length ||
+            !numberOfServings.length
+            // !ingredients || 
+            // !subIngredients ||
+            // !cookingInstructions || 
+            // !subInstructions
         ) {
             throw createHttpError.BadRequest("Missing required fields!");
         };
@@ -118,26 +119,25 @@ export const generateRecipeFromImage = async (req: Request, res: Response, next:
         const { data } = await axios.post(`http://192.168.1.223:11434/api/generate`,
              {
                 model: "llava:7b",
-                prompt: `You are a food recipe generator AI. Analyze this image and return a recipe in **valid JSON only** with the following fields:
+                prompt: `You are a food recipe generator AI. Analyze this image and return a recipe that includes specific quantities of ingredients. Include the name and quantity of the ingredient together as a string value. For example, if a recipe requires 4 ounces of chicken breast, then its value should be "4 oz chicken breast". Do not put the name of the ingredient and the quantity as separate keys. Please also provide clear preparation and cooking instructions and how to cook the food depicted in the image. Return the result in valid JSON only, without any text before or after, with the following fields:
                 {
                     "nameOfDish": "string",
                     "difficultyLevel": "easy | intermediate | hard",
                     "timeToCook": "string (e.g. 30 minutes)",s
                     "numberOfServings": "string (e.g. 4)",
                     "specialEquipment": "string or empty",
-                    "ingredients": [ {nameOfIngredient: "ingredient 1", ingredient_id: generateUniqueId}, {nameOfIngredient: "ingredient 1", ingredient_id: generateUniqueId}, ... ],
-                    "cookingInstructions": [ {instruction: "step 1", instruction_id: generateUniqueId}, {instruction: "step 2", instruction_id: generateUniqueId}, ... ],
-                    "sublists": [ {name: "sublist1 name", id: generateUniqueId }, {name: "sublist2 name", id: generateUniqueId }, ... ],
+                    "ingredients": [ {"nameOfIngredient": name and quantity of ingredient 1, "ingredient_id": generateUniqueId}, {"nameOfIngredient": name and quantity of ingredient 2, "ingredient_id": generateUniqueId}, ... ],
+                    "cookingInstructions": [ {"instruction": step 1, "instruction_id": generateUniqueId}, {"instruction": step 2, "instruction_id": generateUniqueId}, ... ],
+                    "sublists": [ {"name": sublist1 name, "id": generateUniqueId }, {"name": sublist2 name, "id": generateUniqueId }, ... ],
                     "subIngredients": [
-                         {sublistName: "sublist name", sublistId: "matching string value from sublists", nameOfIngredient: "ingredient 1", ingredient_id: generateUniqueId}, {sublistName: "sublist name", sublistId: "matching string value from sublists", nameOfIngredient: "ingredient 2", ingredient_id: generateUniqueId}, .... 
+                         {"sublistName": "sublist name", "sublistId": "matching string value from sublists", "nameOfIngredient": name and quantity of ingredient 1, "ingredient_id": generateUniqueId}, {"sublistName": "sublist name", "sublistId": "matching string value from sublists", "nameOfIngredient": name and quantity of ingredient 2, "ingredient_id": generateUniqueId}, .... 
                     ],
                     "subInstructions": [
-                        { sublistName: "sublist name", sublistId: "matching string value from sublists", instruction: "step 1", instruction_id: generateUniqueId},  { sublistName: "sublist name", sublistId: "matching string value from sublists", instruction: "step 2", instruction_id: generateUniqueId}... }
+                        { "sublistName": "sublist name", "sublistId": "matching string value from sublists", "instruction": step 1, "instruction_id": generateUniqueId},  { "sublistName": "sublist name", "sublistId": "matching string value from sublists", "instruction": step 2, "instruction_id": generateUniqueId}... }
                     ]
                 }
 
-                If the recipe you generate is simple, then leave sublists, subIngredients, and subInstructions empty; only populate the cookingInstructions array with step-by-step cooking instructions that you generate, and only populate the ingredients array with whatever ingredients that you generate. To be clear, each cooking instruction must be an object that contains properties/keys "instruction" and "instruction_id" where the corresponding values are the cooking instruction you generate, and a randomly generated id, respectively. Otherwise, if you generate a recipe that is more complex, then cookingInstructions and ingredients will be empty, but populate sublists, subIngredients, and subInstructions-- each ingredient and cooking instruction you generate must be tied together with its respective sublist.
-                Return **only valid JSON** — no extra text.
+                If the recipe you generate is simple, then leave sublists, subIngredients, and subInstructions empty; only cookingInstructions and ingredients should be populated. Otherwise, if you generate a recipe that is more complex and has multiple sub-recipes, then cookingInstructions and ingredients will be empty, but populate sublists, subIngredients, and subInstructions. Additionally, for complex recipes, each ingredient and cooking instruction you generate must be tied together with its respective sublist.
                 `,
                 images: [base64Image],
                 stream: false,
