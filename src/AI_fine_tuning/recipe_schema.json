@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RecipeRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "_id": { "type": "object", "nullable": true },
+    "cuisineCategory": { "type": "object", "nullable": true },
+    "categoryName": { "type": "string" },
+    "recipeOwner": { "type": "string" },
+    "nameOfDish": { "type": "string" },
+    "difficultyLevel": { "type": "string" },
+    "timeToCook": { "type": "string" },
+    "numberOfServings": { "type": "string" },
+    "specialEquipment": { "type": "string" },
+    "imageUrl": { "type": "string" },
+    "sublists": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": { "name": { "type": "string" }, "id": { "type": "string" } },
+        "required": ["name","id"]
+      }
+    },
+    "ingredients": {
+      "type": "array",
+      "items": {
+        "type":"object",
+        "additionalProperties": false,
+        "properties": {
+          "nameOfIngredient": { "type":"string" },
+          "ingredient_id": { "type":"string" }
+        },
+        "required": ["nameOfIngredient","ingredient_id"]
+      }
+    },
+    "cookingInstructions": {
+      "type": "array",
+      "items": {
+        "type":"object",
+        "additionalProperties": false,
+        "properties": {
+          "instruction": { "type":"string" },
+          "instruction_id": { "type":"string" }
+        },
+        "required": ["instruction","instruction_id"]
+      }
+    },
+    "subIngredients": {
+      "type":"array",
+      "items":{
+        "type":"object",
+        "additionalProperties": false,
+        "properties": {
+          "sublistName": { "type":"string" },
+          "sublistId": { "type":"string" },
+          "nameOfIngredient": { "type":"string" },
+          "ingredient_id": { "type":"string" }
+        },
+        "required": ["sublistName","sublistId","nameOfIngredient","ingredient_id"]
+      }
+    },
+    "subInstructions": {
+      "type":"array",
+      "items":{
+        "type":"object",
+        "additionalProperties": false,
+        "properties": {
+          "sublistName": { "type":"string" },
+          "sublistId": { "type":"string" },
+          "instruction": { "type":"string" },
+          "instruction_id": { "type":"string" }
+        },
+        "required": ["sublistName","sublistId","instruction","instruction_id"]
+      }
+    },
+    "createdAt": { "type":"object", "nullable": true },
+    "updatedAt": { "type":"object", "nullable": true },
+    "__v": { "type":["integer","number","string","null"] }
+  },
+  "required": [
+    "categoryName","recipeOwner","nameOfDish",
+    "difficultyLevel","timeToCook","numberOfServings",
+    "specialEquipment","ingredients","subIngredients",
+    "cookingInstructions","subInstructions","sublists","imageUrl"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "subIngredients": { "minItems": 1 }
+        }
+      },
+      "then": {
+        "properties": {
+          "ingredients": { "maxItems": 0 },
+          "cookingInstructions": { "maxItems": 0 }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "ingredients": { "minItems": 1 }
+        }
+      },
+      "then": {
+        "properties": {
+          "subIngredients": { "maxItems": 0 },
+          "subInstructions": { "maxItems": 0 }
+        }
+      }
+    }
+  ]
+}
