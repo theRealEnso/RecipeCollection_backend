@@ -1,5 +1,5 @@
 {
-  "name": "recipecollction_backend",
+  "name": "recipecollection_backend",
   "version": "1.0.0",
   "description": "Backend for recipe collection app",
   "main": "index.ts",
