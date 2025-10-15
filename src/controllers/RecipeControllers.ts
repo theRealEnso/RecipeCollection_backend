@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import axios from "axios";
+import { v4 as uuidv4 } from 'uuid';
 
 import {
     getRecipes, 
@@ -19,16 +20,6 @@ const AI_SERVER_LOCALHOST_ENDPOINT = process.env.PROXY_SERVER_WSL_TO_OLLAMA_ON_W
 
 //define helper functions
 // some AI models wrap JSON in ``` fences; this removes those wrappers and trims/removes any white space
-const stripFences = (str: string) => {
-    return str.replace(/```json```/g, "").trim();
-};
-
-// function that parses raw text into a JS object after removing any fences (using stripFences function)
-const safelyParseJson = (str: string) => {
-    return JSON.parse(stripFences(str));
-};
-
-// ****
 const stripCodeFences = (str: string) => {
 // remove a single opening fence at the very start and a single closing fence at the very end
   let out = str.replace(/^\s*```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "");
@@ -36,6 +27,30 @@ const stripCodeFences = (str: string) => {
   out = out.replace(/```/g, "");
   return out.trim();
 };
+
+type Phase = "processing" | "finalizing" | "completed" | "error";
+
+// define type(s)
+type Job = {
+    id: string;
+    phase: Phase;
+    progress: number // sync with the bytes / chunks being streamed in realtime to our node server from Ollama,
+    result: any; // store the actual generated recipe
+    error?: any; // handle any errors
+    createdAt: number; // timestamp of when the job was created, but to be used to help cleanup later
+}
+
+const jobs = new Map<string, Job>(); // be updated overtime as the workflow progresses;
+
+const JOB_MAXLIFE_MIN = 60 * 1000 * 10; // 10 minutes
+// periodic cleanup function => function that runs every minute and removes jobs that are older than 10 minutes
+setInterval(() => {
+    const now = Date.now(); // get the current time
+    // loop through the jobs map. If any created jobs was created longer than 10 minutes ago, then we delete it
+    for (const [id, job] of jobs){
+        if((now - job.createdAt) > JOB_MAXLIFE_MIN) jobs.delete(id);
+    };
+});
 
 export const getAllCategoryRecipes = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -136,86 +151,19 @@ export const createRecipe = async (req: Request, res: Response, next: NextFuncti
     }
 };
 
-export const generateRecipeFromImage = async (req: Request, res: Response, next: NextFunction) => {
+export const startRecipeGenerationJob = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { base64Image } = req.body;
-        // console.log(base64Image);
+        if(!base64Image) throw createHttpError.BadRequest("Invalid base64 image!");
 
-        const { data } = await axios.post(`${AI_SERVER_LOCALHOST_ENDPOINT}/api/generate`,
-             {
-                model: "llava:7b",
-                prompt: recipeGenerationPrompt,
-                images: [base64Image],
-                stream: true,
-             }, {
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "text/event-stream",
-            },
-            responseType: "stream", // tells axios to give us a Node stream => stream in bytes / chunks as data arrives from AI server
-            timeout: 0,
-            decompress: true, 
-        });
-
-        let stream: NodeJS.ReadableStream = data;
-
-        let fullText = "";
-        let buffer = "";
-
-        await new Promise<void>((resolve, reject) => {
-            stream.setEncoding("utf-8"); // ensures that we are able to read text, not binary data from the node stream
-
-            // define a helper function
-            // data: {"model":"llava:7b","created_at":"2025-10-14T02:01:45.0148537Z","response":"7","done":false}
-            // {"model":"llava:7b","created_at":"2025-10-14T02:01:45.0148537Z","response":"7","done":false}
-            // handle both cases
-            const processLine = (rawLine: string) => {
-               let line = rawLine.trim();
-               if(!line) return;
-
-               const jsonStr = line.startsWith("data:") ? line.slice(5) : line;
-
-               const parsedJsonObj = JSON.parse(jsonStr);
-
-               const responseFragment = parsedJsonObj.response ?? ""; // null coalescing operator
-
-               if(responseFragment){
-                fullText += responseFragment;
-               }
-            }
-
-            stream.on("data", (chunk: string) => {
-                buffer += chunk;
-                console.log(chunk);
-
-                let newLineIndex;
-                while((newLineIndex = buffer.indexOf("\n")) >= 0){
-                    let line = buffer.slice(0, newLineIndex); // extract the JSON line;
-
-                    buffer = buffer.slice(newLineIndex + 1);
-
-                    // process line
-                    // get the `response` property from each JSON line
-                    // append to fullText
-                    // at the end, we should have fullText containing the full recipe that is generated from the AI model
-                    processLine(line);
-                    
-                    console.log(fullText);
-                }
-
-            });
-
-            stream.on("end", () => {
-                console.log(buffer);
-                resolve()
-            });
-
-            stream.on("error", (error: any) => {
-                console.error(error);
-                reject(error);
-            })
-        })
+        // generate unique
+        const jobId = uuidv4();
         
+        // execute code that kicks off the recipe generation workflow
+
+        res.json({
+            jobId
+        })
     } catch(error){
         next(error);
     }
