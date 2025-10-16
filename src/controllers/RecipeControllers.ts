@@ -6,27 +6,18 @@ import {
     getRecipes, 
     getDetailedRecipe, 
     createNewRecipe,
+    runRecipeGenerationJob
 } from "../services/RecipeServices";
 
 import cloudinary from "../configs/cloudinary";
 
 import createHttpError from "http-errors";
 
-// import AI prompt
 import recipeGenerationPrompt from "../constants/AI_prompts";
+import { nextTick } from "process";
 
 // ai server endpoint
 const AI_SERVER_LOCALHOST_ENDPOINT = process.env.PROXY_SERVER_WSL_TO_OLLAMA_ON_WINDOWS;
-
-//define helper functions
-// some AI models wrap JSON in ``` fences; this removes those wrappers and trims/removes any white space
-const stripCodeFences = (str: string) => {
-// remove a single opening fence at the very start and a single closing fence at the very end
-  let out = str.replace(/^\s*```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "");
-  // remove any remaining stray fences anywhere else
-  out = out.replace(/```/g, "");
-  return out.trim();
-};
 
 type Phase = "processing" | "finalizing" | "completed" | "error";
 
@@ -38,9 +29,19 @@ type Job = {
     result: any; // store the actual generated recipe
     error?: any; // handle any errors
     createdAt: number; // timestamp of when the job was created, but to be used to help cleanup later
-}
+};
 
+// define Job map object
 const jobs = new Map<string, Job>(); // be updated overtime as the workflow progresses;
+
+// define helper function to update the job map object
+export const updateJob = (jobId: string, jobFieldsToUpdate: Partial<Job> ) => {
+    const currentJob = jobs.get(jobId);
+    if(!currentJob) throw new Error("no job exists with the provided jobId!");
+
+    // update the job
+    jobs.set(jobId, {...currentJob, ...jobFieldsToUpdate});
+};
 
 const JOB_MAXLIFE_MIN = 60 * 1000 * 10; // 10 minutes
 // periodic cleanup function => function that runs every minute and removes jobs that are older than 10 minutes
@@ -151,6 +152,8 @@ export const createRecipe = async (req: Request, res: Response, next: NextFuncti
     }
 };
 
+
+//////////              *** for AI recipe generation endpoints *** 
 export const startRecipeGenerationJob = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { base64Image } = req.body;
@@ -160,53 +163,93 @@ export const startRecipeGenerationJob = async (req: Request, res: Response, next
         const jobId = uuidv4();
         
         // execute code that kicks off the recipe generation workflow
+        // use setImmediate instead of awaiting the runRecipeGenerationJob because we want to be able to send the jobId to the front end right away.
+        setImmediate(() => runRecipeGenerationJob(jobId, base64Image));
 
         res.json({
-            jobId
+            message: "Sucessfully sent the job id!",
+            job_id: jobId,
+        })
+    } catch(error){
+        next(error);
+    }
+};
+// endpoint for front end to check / poll job status
+export const getRecipeGenerationJobStatus = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const jobId = req.params.jobId; // get job ID from front end
+        const currentJob = jobs.get(jobId);
+        if(!currentJob) throw createHttpError[404]("Job not found!");
+
+        res.json({
+            phase: currentJob.phase,
+            progress: currentJob.progress,
+            error: currentJob.error,
+            createdAt: currentJob.createdAt,
+        })
+    } catch(error){
+        next(error);
+    }
+};
+// endpoint for frontend to get the generated recipe
+export const getGeneratedRecipe = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const jobId = req.params.jobId; // get job ID from the front end
+        const completedJob = jobs.get(jobId);
+        if(!completedJob) throw createHttpError[404]("completed job not found!");
+
+        const generatedRecipe = completedJob.result; // extract the stored recipe in `result` filed
+        jobs.delete(jobId); // clean up job once it is complete
+
+        res.json({
+            message: "Successfully retrieved the generated recipe!",
+            recipe: generatedRecipe
         })
     } catch(error){
         next(error);
     }
 };
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 //legacy endpoint
-// export const generateRecipeFromImage = async (req: Request, res: Response, next: NextFunction) => {
-//     try {
-//         const { base64Image } = req.body;
-//         // console.log(base64Image);
+export const generateRecipeFromImage = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { base64Image } = req.body;
+        // console.log(base64Image);
 
-//         const { data } = await axios.post(`${AI_SERVER_LOCALHOST_ENDPOINT}/api/generate`,
-//              {
-//                 model: "llava:7b",
-//                 prompt: recipeGenerationPrompt,
-//                 images: [base64Image],
-//                 stream: false,
-//              }, {
-//             headers: {
-//                 "Content-Type": "application/json",
-//             }, 
-//         });
+        const { data } = await axios.post(`${AI_SERVER_LOCALHOST_ENDPOINT}/api/generate`,
+             {
+                model: "llava:7b",
+                prompt: recipeGenerationPrompt,
+                images: [base64Image],
+                stream: false,
+             }, {
+            headers: {
+                "Content-Type": "application/json",
+            }, 
+        });
 
-//         let rawResponse = data.response;
+        let rawResponse = data.response;
         
-//         rawResponse = rawResponse.replace(/```json|```/g, "").trim(); // find all matches of ```json or ``` and replace with empty string, then trim removes empty spaces
+        rawResponse = rawResponse.replace(/```json|```/g, "").trim(); // find all matches of ```json or ``` and replace with empty string, then trim removes empty spaces
 
-//         let recipe;
-//         try {
-//             recipe = JSON.parse(rawResponse);
-//         } catch(error){
-//             console.error("Failed to parse JSON:", rawResponse);
-//             throw error;
-//         };
+        let recipe;
+        try {
+            recipe = JSON.parse(rawResponse);
+        } catch(error){
+            console.error("Failed to parse JSON:", rawResponse);
+            throw error;
+        };
 
-//         res.json({
-//             message: "successfully generated a recipe based on the selected image!",
-//             recipe,
-//         });
-//     } catch(error){
-//         next(error);
-//     }
-// };
+        res.json({
+            message: "successfully generated a recipe based on the selected image!",
+            recipe,
+        });
+    } catch(error){
+        next(error);
+    }
+};
 
 //generating signature to upload image to cloudinary using SIGNED preset
 export const getCloudinarySignature = async (req: Request, res: Response, next: NextFunction) => {

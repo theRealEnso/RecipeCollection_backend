@@ -11,6 +11,8 @@ import createHttpError from "http-errors";
 
 import recipeGenerationPrompt from "../constants/AI_prompts";
 
+import { updateJob } from "../controllers/RecipeControllers";
+
 // ai server endpoint
 const AI_SERVER_LOCALHOST_ENDPOINT = process.env.PROXY_SERVER_WSL_TO_OLLAMA_ON_WINDOWS;
 
@@ -19,9 +21,17 @@ const AI_SERVER_LOCALHOST_ENDPOINT = process.env.PROXY_SERVER_WSL_TO_OLLAMA_ON_W
 const stripCodeFences = (str: string) => {
 // remove a single opening fence at the very start and a single closing fence at the very end
   let out = str.replace(/^\s*```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "");
-  // remove any remaining stray fences anywhere else
+  // remove any remaining stray fences anywhere elsei
   out = out.replace(/```/g, "");
   return out.trim();
+};
+
+// define a helper function that calculates the progress percent
+const progressFromAccumulatedResponse = (accumulatedTextLength: number) => {
+    const safe = Math.max(1, accumulatedTextLength); // just makes sure we don't compute log10(0) bc undefined
+    const decades = Math.log10(safe); // convert accumulatedTextLength value 0, 1, 2, 3, 4
+    const scaled = Math.floor(decades * 26); // multiply by arbitrary number to give realistic progress bar progress feel 
+    return Math.min(95, Math.max(0, scaled)); // clamp the progress completed number between 0 and 95,
 };
 
 export const getRecipes = async (categoryId: string) => {
@@ -87,7 +97,9 @@ export const createNewRecipe = async (recipeData: RecipeData) => {
     return createdRecipe;
 };
 
-const callOllamaStreaming = async (base64Image: string) => {
+//ultimately resolves with a completed extracted recipe from the AI model,
+//also needs to somehow calculate the progress completed as the recipe is being extracted in realtime
+const callOllamaStreaming = async (base64Image: string, updateProgress: (accumulatedText: string) => void) => {
     // console.log(base64Image);
 
     const { data } = await axios.post(`${AI_SERVER_LOCALHOST_ENDPOINT}/api/generate`,
@@ -126,7 +138,7 @@ const callOllamaStreaming = async (base64Image: string) => {
 
             const parsedJsonObj = JSON.parse(jsonStr);
 
-            const responseFragment = parsedJsonObj.response ?? ""; // null coalescing operator
+            const responseFragment = parsedJsonObj.response ?? ""; // null coalescing operator, if we receive a value from the response fields that are null or undefined, then we just replace them with an empty string;
 
             if(responseFragment){
             fullText += responseFragment;
@@ -149,7 +161,12 @@ const callOllamaStreaming = async (base64Image: string) => {
                 // at the end, we should have fullText containing the full recipe that is generated from the AI model
                 processLine(line);
                 
-                console.log(fullText);
+                // write code that updates the Job map object as the fullText is being accumulated
+                // => sub piece => that involves calculating the percentage completed number to show to the FE progress bar
+                // => sub piece => update which "phase" of the work we are in as we go
+                updateProgress(fullText);
+
+                // console.log(fullText);
             }
 
         });
@@ -166,7 +183,39 @@ const callOllamaStreaming = async (base64Image: string) => {
     });
 
     return stripCodeFences(fullText);
-}
+};
+
+export const runRecipeGenerationJob = async (jobId: string, base64Image: string) => {
+    try {
+        // update the job Map object right away to indicate that the job has started => need a helper function to do this
+        updateJob(jobId, {phase: "processing", progress: 0});
+
+        //helper function that we need to pass into callOllamaStreaming function
+        const updateProgress = (accumulatedText: string) => {
+            // pass in the accumulated recipe being built up in `fullText` to this function
+            // get the length of the accumulated text
+            // use the helper function (progressFromAccumulatedResponse function), plug in the growing length into this function to help us compute the progress number
+            //use the updateJob function to update the Job map object
+
+            let lastLength = 0;
+            let accumulatedTextLength = accumulatedText.length;
+            if(accumulatedTextLength > lastLength){
+                lastLength = accumulatedTextLength;
+                const progressCompleted = progressFromAccumulatedResponse(accumulatedTextLength);
+                updateJob(jobId, {progress: progressCompleted});
+            };
+        };
+
+        //await the callOllamaStreaming function to fully resolve and return the completed fullText (our generated recipe);
+        const fullyGeneratedRecipe = await callOllamaStreaming(base64Image, updateProgress);
+
+        updateJob(jobId, {phase: "finalizing", progress: 97}); // update Job to finalizing, update progress to 97
+
+        updateJob(jobId, {phase: "completed", progress: 100, result: fullyGeneratedRecipe}) // mark job as completed, store the fully generated recipe in the result field, update progress number to 100
+    } catch(error: any){
+        updateJob(jobId, {phase: error, error: error})
+    }
+};
 
 
 

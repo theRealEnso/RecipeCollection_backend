@@ -12,7 +12,9 @@ import {
     createCloudinaryImageUrl,
     getCloudinarySignature,
     generateRecipeFromImage,
-    startRecipeGenerationJob
+    startRecipeGenerationJob,
+    getRecipeGenerationJobStatus,
+    getGeneratedRecipe
 } from "../controllers/RecipeControllers";
 
 const router = express.Router();
@@ -23,10 +25,17 @@ router.route("/get-cloudinary-signature").get(trimRequest.all, authMiddleware, g
 router.route("/create-recipe").post(trimRequest.all, authMiddleware, createRecipe);
 router.route("/create-cloudinary-image-url").post(trimRequest.all, authMiddleware, createCloudinaryImageUrl);
 
-// endpoint(s) for AI recipe generation workflow
-router.route("/start-recipe-generation").post(trimRequest.all, authMiddleware, startRecipeGenerationJob);
+//          *****   endpoint(s) for AI recipe generation workflow   *****
+router.route("/start-recipe-generation").post(trimRequest.all, authMiddleware, startRecipeGenerationJob); // start LLM work
+
+router.route("/get-updated-recipe-generation-status/:jobId").get(trimRequest.all, authMiddleware, getRecipeGenerationJobStatus);
+
+router.route("/get-generated-recipe/:jobId").get(trimRequest.all, authMiddleware, getGeneratedRecipe); // provide job status
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 // legacy endpoint
-router.route("/generate-recipe-from-image").post(trimRequest.all, authMiddleware, generateRecipeFromImage);
+router.route("/generate-recipe-from-image").post(trimRequest.all, authMiddleware, generateRecipeFromImage); // send generated recipe
+
 
 export default router;
