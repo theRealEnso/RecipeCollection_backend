@@ -51,7 +51,7 @@ setInterval(() => {
     for (const [id, job] of jobs){
         if((now - job.createdAt) > JOB_MAXLIFE_MIN) jobs.delete(id);
     };
-});
+}, 60000);
 
 export const getAllCategoryRecipes = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -159,8 +159,17 @@ export const startRecipeGenerationJob = async (req: Request, res: Response, next
         const { base64Image } = req.body;
         if(!base64Image) throw createHttpError.BadRequest("Invalid base64 image!");
 
-        // generate unique
+        // generate unique job id
         const jobId = uuidv4();
+
+        //set job
+        jobs.set(jobId, {
+            id: jobId,
+            phase: "processing", // or "processing" w/ 0%—your choice
+            progress: 0,
+            result: null,
+            createdAt: Date.now(),
+        });
         
         // execute code that kicks off the recipe generation workflow
         // use setImmediate instead of awaiting the runRecipeGenerationJob because we want to be able to send the jobId to the front end right away.
@@ -179,7 +188,7 @@ export const getRecipeGenerationJobStatus = async (req: Request, res: Response, 
     try {
         const jobId = req.params.jobId; // get job ID from front end
         const currentJob = jobs.get(jobId);
-        if(!currentJob) throw createHttpError[404]("Job not found!");
+        if(!currentJob) throw createHttpError.NotFound("Job not found!");
 
         res.json({
             phase: currentJob.phase,

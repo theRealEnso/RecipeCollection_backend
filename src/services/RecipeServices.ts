@@ -188,32 +188,32 @@ const callOllamaStreaming = async (base64Image: string, updateProgress: (accumul
 export const runRecipeGenerationJob = async (jobId: string, base64Image: string) => {
     try {
         // update the job Map object right away to indicate that the job has started => need a helper function to do this
-        updateJob(jobId, {phase: "processing", progress: 0});
+        updateJob(jobId, {id: jobId, phase: "processing", progress: 0});
 
         //helper function that we need to pass into callOllamaStreaming function
+        let lastLength = 0;
         const updateProgress = (accumulatedText: string) => {
             // pass in the accumulated recipe being built up in `fullText` to this function
             // get the length of the accumulated text
             // use the helper function (progressFromAccumulatedResponse function), plug in the growing length into this function to help us compute the progress number
             //use the updateJob function to update the Job map object
 
-            let lastLength = 0;
             let accumulatedTextLength = accumulatedText.length;
             if(accumulatedTextLength > lastLength){
                 lastLength = accumulatedTextLength;
                 const progressCompleted = progressFromAccumulatedResponse(accumulatedTextLength);
-                updateJob(jobId, {progress: progressCompleted});
+                updateJob(jobId, {id: jobId, progress: progressCompleted});
             };
         };
 
         //await the callOllamaStreaming function to fully resolve and return the completed fullText (our generated recipe);
         const fullyGeneratedRecipe = await callOllamaStreaming(base64Image, updateProgress);
 
-        updateJob(jobId, {phase: "finalizing", progress: 97}); // update Job to finalizing, update progress to 97
+        updateJob(jobId, {id: jobId, phase: "finalizing", progress: 97}); // update Job to finalizing, update progress to 97
 
-        updateJob(jobId, {phase: "completed", progress: 100, result: fullyGeneratedRecipe}) // mark job as completed, store the fully generated recipe in the result field, update progress number to 100
+        updateJob(jobId, {id: jobId, phase: "completed", progress: 100, result: fullyGeneratedRecipe}) // mark job as completed, store the fully generated recipe in the result field, update progress number to 100
     } catch(error: any){
-        updateJob(jobId, {phase: error, error: error})
+        updateJob(jobId, {id: jobId, phase: error, error: error})
     }
 };
 

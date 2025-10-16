@@ -67,7 +67,7 @@ export const createAndAddUserToDB = async (userData: UserData) => {
 export const signInUser = async (email: string, password: string) => {
     const foundUser = await UserModel.findOne({email});
 
-    if(!foundUser) throw createHttpError[404]("User not found!");
+    if(!foundUser) throw createHttpError.NotFound("User not found!");
 
     const hashedPassword = foundUser.password;
 
@@ -81,7 +81,7 @@ export const signInUser = async (email: string, password: string) => {
 export const findUser = async (id: string) => {
     const foundUser = await UserModel.findById(id);
 
-    if(!foundUser) throw createHttpError[404]("User not found!");
+    if(!foundUser) throw createHttpError.NotFound("User not found!");
 
     return foundUser;
 };

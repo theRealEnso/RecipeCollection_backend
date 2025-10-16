@@ -8,7 +8,7 @@ import createHttpError from "http-errors";
 export const getCategories = async (userId: string): Promise<Category[]> => {
     const userCategories = await CuisineCategoryModel.find({user: userId});
 
-    if(!userCategories) throw createHttpError[404]("No categories found for the user!");
+    if(!userCategories) throw createHttpError.NotFound("No categories found for the user!");
 
     return userCategories;
 };
