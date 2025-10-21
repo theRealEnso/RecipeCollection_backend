@@ -138,16 +138,16 @@ const callOllamaStreaming = async (base64Image: string, updateProgress: (accumul
 
             const parsedJsonObj = JSON.parse(jsonStr);
 
-            const responseFragment = parsedJsonObj.response ?? ""; // null coalescing operator, if we receive a value from the response fields that are null or undefined, then we just replace them with an empty string;
+            const responseFragment = parsedJsonObj.response ?? ""; // null coalescing operator, if we receive a value from the response fields that are null or undefined, then we just replace them with an empty string. Otherwise, responseFragment will be the data inside of the response field
 
             if(responseFragment){
-            fullText += responseFragment;
-            }
-        }
+                fullText += responseFragment;
+            };
+        };
 
         stream.on("data", (chunk: string) => {
             buffer += chunk;
-            console.log(chunk);
+            // console.log(chunk);
 
             let newLineIndex;
             while((newLineIndex = buffer.indexOf("\n")) >= 0){
@@ -172,8 +172,14 @@ const callOllamaStreaming = async (base64Image: string, updateProgress: (accumul
         });
 
         stream.on("end", () => {
-            console.log(buffer);
-            resolve()
+            // console.log(buffer);
+            const tail = buffer.trim();
+            if(tail){
+                processLine(tail);
+                updateProgress(fullText);
+            };
+
+            resolve();
         });
 
         stream.on("error", (error: any) => {
@@ -182,16 +188,21 @@ const callOllamaStreaming = async (base64Image: string, updateProgress: (accumul
         })
     });
 
-    return stripCodeFences(fullText);
+    // console.log("full recipe is: ", fullText);
+
+    console.log("the data type of fullText is: ", typeof(JSON.parse(stripCodeFences(fullText))));
+
+    return JSON.parse((stripCodeFences(fullText)));
 };
 
 export const runRecipeGenerationJob = async (jobId: string, base64Image: string) => {
     try {
         // update the job Map object right away to indicate that the job has started => need a helper function to do this
-        updateJob(jobId, {id: jobId, phase: "processing", progress: 0});
+        updateJob(jobId, {id: jobId, phase: "processing", progress: 1});
 
-        //helper function that we need to pass into callOllamaStreaming function
         let lastLength = 0;
+        let baseline = 1;
+        //helper function that we need to pass into callOllamaStreaming function
         const updateProgress = (accumulatedText: string) => {
             // pass in the accumulated recipe being built up in `fullText` to this function
             // get the length of the accumulated text
@@ -202,7 +213,9 @@ export const runRecipeGenerationJob = async (jobId: string, base64Image: string)
             if(accumulatedTextLength > lastLength){
                 lastLength = accumulatedTextLength;
                 const progressCompleted = progressFromAccumulatedResponse(accumulatedTextLength);
-                updateJob(jobId, {id: jobId, progress: progressCompleted});
+                const clamped = Math.max(baseline, progressCompleted);
+                // console.log("progress percent has been updated to: ", clamped);
+                updateJob(jobId, {id: jobId, progress: clamped});
             };
         };
 
@@ -211,9 +224,10 @@ export const runRecipeGenerationJob = async (jobId: string, base64Image: string)
 
         updateJob(jobId, {id: jobId, phase: "finalizing", progress: 97}); // update Job to finalizing, update progress to 97
 
-        updateJob(jobId, {id: jobId, phase: "completed", progress: 100, result: fullyGeneratedRecipe}) // mark job as completed, store the fully generated recipe in the result field, update progress number to 100
+        // mark job as completed, store the fully generated recipe in the result field, update progress number to 100
+        updateJob(jobId, {id: jobId, phase: "completed", progress: 100, result: fullyGeneratedRecipe}) 
     } catch(error: any){
-        updateJob(jobId, {id: jobId, phase: error, error: error})
+        updateJob(jobId, {id: jobId, phase: "error", error: error})
     }
 };
 

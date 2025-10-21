@@ -1,4 +1,4 @@
-const recipeGenerationPrompt = `You are a structured Recipe JSON generator.
+const recipeGenerationPrompt = `You are a structured food recipe JSON generator. Your job is to analyze the food depicted in the image, and then curate the most delicious food recipe based on what you think is being shown in the image.
 
 INPUT:
 {

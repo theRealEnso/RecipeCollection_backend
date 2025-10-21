@@ -14,7 +14,6 @@ import cloudinary from "../configs/cloudinary";
 import createHttpError from "http-errors";
 
 import recipeGenerationPrompt from "../constants/AI_prompts";
-import { nextTick } from "process";
 
 // ai server endpoint
 const AI_SERVER_LOCALHOST_ENDPOINT = process.env.PROXY_SERVER_WSL_TO_OLLAMA_ON_WINDOWS;
@@ -165,9 +164,10 @@ export const startRecipeGenerationJob = async (req: Request, res: Response, next
         //set job
         jobs.set(jobId, {
             id: jobId,
-            phase: "processing", // or "processing" w/ 0%—your choice
+            phase: "processing",
             progress: 0,
             result: null,
+            error: null,
             createdAt: Date.now(),
         });
         
@@ -176,12 +176,12 @@ export const startRecipeGenerationJob = async (req: Request, res: Response, next
         setImmediate(() => runRecipeGenerationJob(jobId, base64Image));
 
         res.json({
-            message: "Sucessfully sent the job id!",
+            message: "Successfully sent the job id!",
             job_id: jobId,
         })
     } catch(error){
         next(error);
-    }
+    };
 };
 // endpoint for front end to check / poll job status
 export const getRecipeGenerationJobStatus = async (req: Request, res: Response, next: NextFunction) => {
@@ -189,6 +189,8 @@ export const getRecipeGenerationJobStatus = async (req: Request, res: Response, 
         const jobId = req.params.jobId; // get job ID from front end
         const currentJob = jobs.get(jobId);
         if(!currentJob) throw createHttpError.NotFound("Job not found!");
+
+        // console.log('status ->', jobId, jobs.get(jobId));
 
         res.json({
             phase: currentJob.phase,
