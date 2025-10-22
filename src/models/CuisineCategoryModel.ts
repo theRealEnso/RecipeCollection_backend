@@ -20,6 +20,12 @@ const cuisineCategorySchema = new Schema({
         required: true,
         trim: true,
     },
+
+    cuisineImage: {
+        type: String,
+        required: true,
+    },
+    
 }, {collection: "cuisine_categories", timestamps: true});
 
 export const CuisineCategoryModel = mongoose.models.CategoriesModel || mongoose.model("CuisineCategoryModel", cuisineCategorySchema);

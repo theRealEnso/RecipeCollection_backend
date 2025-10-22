@@ -3,6 +3,10 @@ import { CuisineCategoryModel } from "../models/CuisineCategoryModel";
 //import type(s)
 import { Category } from "../types/Category";
 
+// import utility function(s)
+import { formatName } from "../utils/FormatName";
+import { getCategoryImage } from "../utils/categoryImage";
+
 import createHttpError from "http-errors";
 
 export const getCategories = async (userId: string): Promise<Category[]> => {
@@ -16,7 +20,8 @@ export const getCategories = async (userId: string): Promise<Category[]> => {
 export const addUserCategory = async (userId: string, name: string): Promise<Category> => {
     const addedCategory = await CuisineCategoryModel.create({
         user: userId,
-        cuisineName: name,
+        cuisineName: formatName(name),
+        cuisineImage: getCategoryImage(formatName(name)),
     });
 
     if(!addedCategory) throw createHttpError[500]("Whoops! Something went wrong!");

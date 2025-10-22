@@ -11,6 +11,9 @@ import {
     deleteCuisineCategory, 
 } from "../services/CategoryServices";
 
+// import utility function(s)
+import { formatName } from "../utils/FormatName";
+
 export const getUserCategories = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const { id } = req.user; // from auth middleware
@@ -37,7 +40,9 @@ export const addCategory = async (req: Request, res: Response, next: NextFunctio
 
         if(!id || ! name) throw createHttpError.BadRequest("Invalid user ID and/or missing required `name` field");
 
-        const newCategory = await addUserCategory(id, name);
+        const formattedName = formatName(name);
+
+        const newCategory = await addUserCategory(id, formattedName);
 
         res.json({
             message: `Category successfully added!`,
