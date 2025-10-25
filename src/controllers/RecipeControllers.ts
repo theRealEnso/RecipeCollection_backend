@@ -223,45 +223,6 @@ export const getGeneratedRecipe = async (req: Request, res: Response, next: Next
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//legacy endpoint
-export const generateRecipeFromImage = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { base64Image } = req.body;
-        // console.log(base64Image);
-
-        const { data } = await axios.post(`${AI_SERVER_LOCALHOST_ENDPOINT}/api/generate`,
-             {
-                model: "llava:7b",
-                prompt: recipeGenerationPrompt,
-                images: [base64Image],
-                stream: false,
-             }, {
-            headers: {
-                "Content-Type": "application/json",
-            }, 
-        });
-
-        let rawResponse = data.response;
-        
-        rawResponse = rawResponse.replace(/```json|```/g, "").trim(); // find all matches of ```json or ``` and replace with empty string, then trim removes empty spaces
-
-        let recipe;
-        try {
-            recipe = JSON.parse(rawResponse);
-        } catch(error){
-            console.error("Failed to parse JSON:", rawResponse);
-            throw error;
-        };
-
-        res.json({
-            message: "successfully generated a recipe based on the selected image!",
-            recipe,
-        });
-    } catch(error){
-        next(error);
-    }
-};
-
 //generating signature to upload image to cloudinary using SIGNED preset
 export const getCloudinarySignature = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -332,4 +293,44 @@ export const createCloudinaryImageUrl = async (req: Request, res: Response, next
     };
 };
 
-`{"model":"llava:7b","created_at":"2025-10-14T02:01:45.0148537Z","response":"7","done":false}\n{"model":"llava:7b","created_at":"2025-10-14T02:01:45.0224356Z","response":"-","done":false}\n`
+//legacy endpoint
+export const generateRecipeFromImage = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { base64Image } = req.body;
+        // console.log(base64Image);
+
+        const { data } = await axios.post(`${AI_SERVER_LOCALHOST_ENDPOINT}/api/generate`,
+             {
+                model: "llava:7b",
+                prompt: recipeGenerationPrompt,
+                images: [base64Image],
+                stream: false,
+             }, {
+            headers: {
+                "Content-Type": "application/json",
+            }, 
+        });
+
+        let rawResponse = data.response;
+        
+        rawResponse = rawResponse.replace(/```json|```/g, "").trim(); // find all matches of ```json or ``` and replace with empty string, then trim removes empty spaces
+
+        let recipe;
+        try {
+            recipe = JSON.parse(rawResponse);
+        } catch(error){
+            console.error("Failed to parse JSON:", rawResponse);
+            throw error;
+        };
+
+        res.json({
+            message: "successfully generated a recipe based on the selected image!",
+            recipe,
+        });
+    } catch(error){
+        next(error);
+    }
+};
+
+
+// `{"model":"llava:7b","created_at":"2025-10-14T02:01:45.0148537Z","response":"7","done":false}\n{"model":"llava:7b","created_at":"2025-10-14T02:01:45.0224356Z","response":"-","done":false}\n`

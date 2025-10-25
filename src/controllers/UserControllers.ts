@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 import createHttpError from "http-errors";
 import { Secret } from "jsonwebtoken";
 
+import cloudinary from "../configs/cloudinary";
+
 import { createAndAddUserToDB, signInUser, findUser } from "../services/UserServices";
 
 //import utility functions
@@ -15,10 +17,17 @@ const { SECRET_ACCESS_TOKEN, SECRET_REFRESH_TOKEN } = process.env;
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
     try {
+        // console.log("Register endpoint called with data:", req.body);
+        console.log("=== REGISTER ENDPOINT CALLED ===");
+        console.log("Request body:", req.body);
+        console.log("Request body keys:", Object.keys(req.body));
+        console.log("Profile picture value:", req.body.profilePicture);
+        console.log("Picture value:", req.body.picture);
+
         let accessToken;
         let refreshToken;
 
-        const {firstName, lastName, email, password, confirmPassword } = req.body;
+        const {firstName, lastName, email, password, confirmPassword, profilePicture } = req.body;
     
         if(
             !firstName ||
@@ -37,6 +46,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
             email,
             password,
             confirmPassword,
+            profilePicture,
         });
     
         //generate access token
@@ -57,6 +67,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
                 firstName: newUser.firstName,
                 lastName: newUser.lastName,
                 email: newUser.email,
+                picture: newUser.image,
             },
             access_token: accessToken,
             refresh_token: refreshToken,
@@ -95,6 +106,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
                 firstName: user.firstName,
                 lastName: user.lastName,
                 email: user.email,
+                picture: user.image,
             },
             access_token: accessToken,
             refresh_token: refreshToken,
@@ -130,3 +142,31 @@ export const refreshUserToken = async (req: Request, res: Response, next: NextFu
         next(error);
     }
 };
+
+//generating signature to upload image to cloudinary using SIGNED preset
+export const getCloudinarySignatureProfilePic = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const timestamp = Math.floor(new Date().getTime() / 1000);
+        
+        const signature = cloudinary.utils.api_sign_request(
+            {
+                timestamp,
+                folder: "recipeAppUserProfilePictures",
+                upload_preset: process.env.CLOUDINARY_SIGNED_UPLOAD_PRESET,
+            },
+            process.env.CLOUDINARY_API_SECRET as string,
+        );
+
+        res.json({
+            timestamp,
+            signature,
+            apikey: process.env.CLOUDINARY_API_KEY,
+            cloudname: process.env.CLOUDINARY_API_NAME,
+            uploadPreset: process.env.CLOUDINARY_SIGNED_UPLOAD_PRESET,
+            folder: "recipeAppUserProfilePictures",
+        });
+    } catch(error){
+        next(error);
+    };
+};
+

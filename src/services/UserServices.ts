@@ -9,6 +9,7 @@ export type UserData = {
     email: string;
     password: string;
     confirmPassword: string;
+    profilePicture: string;
 };
 
 export const createAndAddUserToDB = async (userData: UserData) => {
@@ -17,16 +18,11 @@ export const createAndAddUserToDB = async (userData: UserData) => {
         lastName, 
         email, 
         password, 
-        confirmPassword
+        confirmPassword,
+        profilePicture,
     } = userData;
 
     // validate user data
-
-    //check if email is already used with an existing user
-    const foundExistingUser = await UserModel.findOne({email});
-    if(foundExistingUser){
-        throw createHttpError.BadRequest("The email provided is already in use. Please try again with a different email address");
-    };
 
     //check if passwords match
     if(password !== confirmPassword){
@@ -53,12 +49,19 @@ export const createAndAddUserToDB = async (userData: UserData) => {
         throw createHttpError.BadRequest("Please enter a valid email address");
     };
 
+    //check if email is already used with an existing user
+    const foundExistingUser = await UserModel.findOne({email});
+    if(foundExistingUser){
+        throw createHttpError.BadRequest("The email provided is already in use. Please try again with a different email address");
+    };
+
     //finally, create user in the database
     const user = await UserModel.create({
         firstName,
         lastName,
         email,
         password,
+        image: profilePicture,
     });
 
     return user;

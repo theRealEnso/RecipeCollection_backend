@@ -22,8 +22,8 @@ const router = express.Router();
 router.route("/get-category-recipes/:categoryId").get(trimRequest.all, authMiddleware, getAllCategoryRecipes);
 router.route("/get-category-recipes/recipe/:recipeId").get(trimRequest.all, authMiddleware, getRecipeDetails);
 router.route("/get-cloudinary-signature").get(trimRequest.all, authMiddleware, getCloudinarySignature);
-router.route("/create-recipe").post(trimRequest.all, authMiddleware, createRecipe);
 router.route("/create-cloudinary-image-url").post(trimRequest.all, authMiddleware, createCloudinaryImageUrl);
+router.route("/create-recipe").post(trimRequest.all, authMiddleware, createRecipe);
 
 //          *****   endpoint(s) for AI recipe generation workflow   *****
 router.route("/start-recipe-generation").post(trimRequest.all, authMiddleware, startRecipeGenerationJob); // start LLM work

@@ -12,6 +12,7 @@ interface NewUser extends Document {
     email: string,
     password: string,
     $isNew: boolean;
+    image: string;
 };
 
 //create user schema
@@ -49,6 +50,11 @@ const userSchema = new Schema<NewUser>({
         trim: true,
         minLength: [8, "Password must be at least 8 characters long"],
         maxLength: [32, "Password cannot exceed 32 characters in length"],
+    },
+
+    image: {
+        type: String,
+        required: true,
     },
 
 }, {collection: "users", timestamps: true,});
