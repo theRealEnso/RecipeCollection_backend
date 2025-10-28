@@ -6,6 +6,7 @@ import {
     getRecipes, 
     getDetailedRecipe, 
     createNewRecipe,
+    updateRecipe,
     runRecipeGenerationJob
 } from "../services/RecipeServices";
 
@@ -14,6 +15,9 @@ import cloudinary from "../configs/cloudinary";
 import createHttpError from "http-errors";
 
 import recipeGenerationPrompt from "../constants/AI_prompts";
+
+// import type(s)
+import { RecipeDocument } from "../types/Recipe";
 
 // ai server endpoint
 const AI_SERVER_LOCALHOST_ENDPOINT = process.env.PROXY_SERVER_WSL_TO_OLLAMA_ON_WINDOWS;
@@ -108,6 +112,9 @@ export const createRecipe = async (req: Request, res: Response, next: NextFuncti
             cookingInstructions,
             subInstructions,
             sublists,
+            isPublic,
+            ownerUserId,
+            isClaimed,
         } = req.body;
 
         if(
@@ -116,11 +123,8 @@ export const createRecipe = async (req: Request, res: Response, next: NextFuncti
             !nameOfDish.length || 
             !difficultyLevel.length ||
             !timeToCook.length ||
-            !numberOfServings.length
-            // !ingredients || 
-            // !subIngredients ||
-            // !cookingInstructions || 
-            // !subInstructions
+            !numberOfServings.length ||
+            !ownerUserId.length
         ) {
             throw createHttpError.BadRequest("Missing required fields!");
         };
@@ -140,6 +144,9 @@ export const createRecipe = async (req: Request, res: Response, next: NextFuncti
             cookingInstructions,
             subInstructions,
             sublists,
+            isPublic,
+            ownerUserId,
+            isClaimed,
         });
 
         res.json({
@@ -149,6 +156,33 @@ export const createRecipe = async (req: Request, res: Response, next: NextFuncti
     } catch(error){
         next(error);
     }
+};
+
+export const claimRecipe = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { recipeId } = req.params;
+        const userId = req.user._id;
+
+        if(!recipeId || userId) throw createHttpError.BadRequest("Recipe ID and User ID are missing!");
+
+        // find the recipe using the recipeId
+        const foundRecipe = await getDetailedRecipe(recipeId);
+
+        // check if the user already owns this recipe
+        if(foundRecipe.ownerUserId === userId){
+            throw createHttpError.Conflict("You already own this recipe!");
+        };
+
+        const updatedRecipe = await updateRecipe(recipeId, userId);
+
+        res.json({
+            message: "Recipe has successfully been updated!",
+            updatedRecipe,
+        })
+
+    } catch(error){
+        next(error);
+    };
 };
 
 

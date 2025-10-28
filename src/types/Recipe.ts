@@ -25,11 +25,39 @@ export type RecipeData = {
     difficultyLevel: string;
     timeToCook: string;
     numberOfServings: string;
-    specialEquipment: string[],
+    specialEquipment: string,
     imageUrl: string;
     ingredients: string[];
     subIngredients: SubIngredient[];
     cookingInstructions: string[];
     subInstructions: RecipeSubInstructions[];
     sublists: string[],
+    isPublic: boolean,
+    ownerUserId: string,
+    isClaimed: boolean,
+};
+
+export type RecipeDocument = {
+    _id: string;
+    cuisineCategory: string;
+    categoryName: string;
+    recipeOwner: string;
+    nameOfDish: string;
+    difficultyLevel: string;
+    timeToCook: string;
+    numberOfServings: string;
+    specialEquipment: string;
+    imageUrl: string;
+    ingredients: string[];
+    subIngredients: SubIngredient[];
+    cookingInstructions: string[];
+    subInstructions: RecipeSubInstructions[];
+    sublists: string[];
+    ownerUserId: string;
+    isPublic: boolean;
+    claimedByUserId: string | null;
+    claimedAt: Date | null;
+    isClaimed: boolean;
+    createdAt: Date;
+    updatedAt: Date;
 };

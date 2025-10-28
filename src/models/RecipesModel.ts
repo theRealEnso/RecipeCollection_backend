@@ -71,7 +71,34 @@ const recipesSchema = new Schema(
 
         sublists: {
             type: [],
-        }
+        },
+
+        // adding public visibility status
+        isPublic: {
+            type: Boolean,
+            default: false,
+        },
+
+        // initially ID of user that added the recipe -- to be updated if other user claims ownership of recipe
+        ownerUserId: {
+            type: String,
+            required: true,
+        },
+
+        claimedByUserId: {
+            type: String,
+            default: null,
+        },
+
+        isClaimed: {
+            type: Boolean,
+            default: false,
+        },
+
+        claimedAt: {
+            type: Date,
+            default: null,
+        },
     },
 
     {

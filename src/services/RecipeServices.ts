@@ -5,13 +5,14 @@ import mongoose from "mongoose";
 import { RecipesModel } from "../models/RecipesModel";
 
 //import type(s)
-import { RecipeData } from "../types/Recipe";
+import { RecipeData, RecipeDocument } from "../types/Recipe";
 
 import createHttpError from "http-errors";
 
 import recipeGenerationPrompt from "../constants/AI_prompts";
 
 import { updateJob } from "../controllers/RecipeControllers";
+import { UserModel } from "../models/UserModel";
 
 // ai server endpoint
 const AI_SERVER_LOCALHOST_ENDPOINT = process.env.PROXY_SERVER_WSL_TO_OLLAMA_ON_WINDOWS;
@@ -52,7 +53,7 @@ export const getRecipes = async (categoryId: string) => {
 export const getDetailedRecipe = async (recipeId: string) => {
     const recipe = await RecipesModel.findById(recipeId);
 
-    if(!recipe) throw createHttpError[404]("Recipe not found!");
+    if(!recipe) throw createHttpError.NotFound("Recipe not found!");
 
     return recipe;
 };
@@ -72,7 +73,10 @@ export const createNewRecipe = async (recipeData: RecipeData) => {
         subIngredients,
         cookingInstructions,
         subInstructions,
-        sublists
+        sublists,
+        isPublic,
+        ownerUserId,
+        isClaimed,
     } = recipeData;
 
     const createdRecipe = await RecipesModel.create({
@@ -90,12 +94,35 @@ export const createNewRecipe = async (recipeData: RecipeData) => {
         cookingInstructions: cookingInstructions && cookingInstructions.length > 0 ? cookingInstructions : [],
         subInstructions: subInstructions && subInstructions.length > 0 ? subInstructions : [],
         sublists: sublists && sublists.length > 0 ? sublists : [],
+        isPublic,
+        ownerUserId,
+        isClaimed,
     });
 
     if(!createdRecipe) throw createHttpError[500]("Something went wrong!");
 
     return createdRecipe;
 };
+
+export const updateRecipe = async (recipeId: string, userId: string) => {
+    const updatedRecipe = await RecipesModel.findByIdAndUpdate(
+        recipeId, 
+        {
+            ownerUserId: userId,
+            claimedByUserId: userId,
+            claimedAt: new Date(),
+            isClaimed: true,
+        }, 
+
+        {
+            new: true, // return the updated document
+        }
+    );
+
+    if(!updatedRecipe) throw createHttpError[500]("Failed to claim recipe!");
+
+    return updatedRecipe;
+}
 
 //ultimately resolves with a completed extracted recipe from the AI model,
 //also needs to somehow calculate the progress completed as the recipe is being extracted in realtime
