@@ -27,10 +27,10 @@ const stripCodeFences = (str: string) => {
   return out.trim();
 };
 
-// define a helper function that calculates the progress percent
+// helper function that calculates the progress percent (For AI workload)
 const progressFromAccumulatedResponse = (accumulatedTextLength: number) => {
     const safe = Math.max(1, accumulatedTextLength); // just makes sure we don't compute log10(0) bc undefined
-    const decades = Math.log10(safe); // convert accumulatedTextLength value 0, 1, 2, 3, 4
+    const decades = Math.log10(safe); // convert accumulatedTextLength value to 0, 1, 2, 3, 4...
     const scaled = Math.floor(decades * 26); // multiply by arbitrary number to give realistic progress bar progress feel 
     return Math.min(95, Math.max(0, scaled)); // clamp the progress completed number between 0 and 95,
 };
@@ -49,6 +49,14 @@ export const getRecipes = async (categoryId: string) => {
 
     return recipes;
 };
+
+export const getPublicRecipes = async () => {
+    const publicRecipes = await RecipesModel.find({isPublic: true});
+
+    if(!publicRecipes) throw createHttpError.NotFound("Public recipes not found!");
+
+    return publicRecipes;
+}
 
 export const getDetailedRecipe = async (recipeId: string) => {
     const recipe = await RecipesModel.findById(recipeId);
@@ -104,6 +112,35 @@ export const createNewRecipe = async (recipeData: RecipeData) => {
     return createdRecipe;
 };
 
+export const searchForUserRecipes = async (searchQuery: string, userId: string) => {
+    try {
+        const searchRegex = new RegExp(searchQuery, "i"); //make searchQuery case insensitive
+        // ex: if searchQuery is "hello" or "HELLO"... it will match to all of these in the search
+
+        // define search criteria
+        const searchCriterion = {
+            ownerUserId: userId, // search for recipes owned by the user
+            $or: [
+                {nameOfDish: {$regex: searchRegex}}, // user can search for the name of the dish
+                {recipeOwner: {$regex: searchRegex}} // user can search for the name of the recipe owner / creator
+            ]
+        };
+
+        let userRecipes: any[] | null = await RecipesModel.find(searchCriterion)
+            .populate('cuisineCategory')
+            .sort({createdAt: -1}); // sort recipes by the newest
+
+        console.log(userRecipes);
+        console.log(userRecipes.length);
+
+        // userRecipes = userRecipes.length === 0 ? null : userRecipes
+
+        return userRecipes;
+    } catch(error){
+        throw createHttpError.InternalServerError("Failed to search for recipes...");
+    };
+};
+
 export const updateRecipe = async (recipeId: string, userId: string) => {
     const updatedRecipe = await RecipesModel.findByIdAndUpdate(
         recipeId, 
@@ -153,9 +190,13 @@ const callOllamaStreaming = async (base64Image: string, updateProgress: (accumul
     await new Promise<void>((resolve, reject) => {
         stream.setEncoding("utf-8"); // ensures that we are able to read text, not binary data from the node stream
 
-        // define a helper function
-        // data: {"model":"llava:7b","created_at":"2025-10-14T02:01:45.0148537Z","response":"7","done":false}
-        // {"model":"llava:7b","created_at":"2025-10-14T02:01:45.0148537Z","response":"7","done":false}
+        // define a helper function to process incoming chunks
+        // chunks look like either:
+        // 1.) data: {"model":"llava:7b","created_at":"2025-10-14T02:01:45.0148537Z","response":"7","done":false}
+
+        // OR
+
+        // 2.) {"model":"llava:7b","created_at":"2025-10-14T02:01:45.0148537Z","response":"7","done":false}
         // handle both cases
         const processLine = (rawLine: string) => {
             let line = rawLine.trim();
@@ -165,7 +206,7 @@ const callOllamaStreaming = async (base64Image: string, updateProgress: (accumul
 
             const parsedJsonObj = JSON.parse(jsonStr);
 
-            const responseFragment = parsedJsonObj.response ?? ""; // null coalescing operator, if we receive a value from the response fields that are null or undefined, then we just replace them with an empty string. Otherwise, responseFragment will be the data inside of the response field
+            const responseFragment = parsedJsonObj.response ?? ""; // null coalescing operator, if we receive a value from the response fields that are null or undefined, then we just replace them with an empty string. Otherwise, responseFragment will be the data inside of the                        =             response field  
 
             if(responseFragment){
                 fullText += responseFragment;
@@ -180,7 +221,7 @@ const callOllamaStreaming = async (base64Image: string, updateProgress: (accumul
             while((newLineIndex = buffer.indexOf("\n")) >= 0){
                 let line = buffer.slice(0, newLineIndex); // extract the JSON line;
 
-                buffer = buffer.slice(newLineIndex + 1);
+                buffer = buffer.slice(newLineIndex + 1); //update buffer to remove the processed line
 
                 // process line
                 // get the `response` property from each JSON line
@@ -189,7 +230,7 @@ const callOllamaStreaming = async (base64Image: string, updateProgress: (accumul
                 processLine(line);
                 
                 // write code that updates the Job map object as the fullText is being accumulated
-                // => sub piece => that involves calculating the percentage completed number to show to the FE progress bar
+                // => sub piece of logic that involves calculating the percentage completed number to show to the FE progress bar
                 // => sub piece => update which "phase" of the work we are in as we go
                 updateProgress(fullText);
 
@@ -229,6 +270,7 @@ export const runRecipeGenerationJob = async (jobId: string, base64Image: string)
 
         let lastLength = 0;
         let baseline = 1;
+
         //helper function that we need to pass into callOllamaStreaming function
         const updateProgress = (accumulatedText: string) => {
             // pass in the accumulated recipe being built up in `fullText` to this function
@@ -255,7 +297,7 @@ export const runRecipeGenerationJob = async (jobId: string, base64Image: string)
         updateJob(jobId, {id: jobId, phase: "completed", progress: 100, result: fullyGeneratedRecipe}) 
     } catch(error: any){
         updateJob(jobId, {id: jobId, phase: "error", error: error})
-    }
+    };
 };
 
 

@@ -3,9 +3,11 @@ import axios from "axios";
 import { v4 as uuidv4 } from 'uuid';
 
 import {
-    getRecipes, 
+    getRecipes,
+    getPublicRecipes, 
     getDetailedRecipe, 
     createNewRecipe,
+    searchForUserRecipes,
     updateRecipe,
     runRecipeGenerationJob
 } from "../services/RecipeServices";
@@ -34,7 +36,7 @@ type Job = {
     createdAt: number; // timestamp of when the job was created, but to be used to help cleanup later
 };
 
-// define Job map object
+// define Job map object (for AI workload)
 const jobs = new Map<string, Job>(); // be updated overtime as the workflow progresses;
 
 // define helper function to update the job map object
@@ -42,11 +44,12 @@ export const updateJob = (jobId: string, jobFieldsToUpdate: Partial<Job> ) => {
     const currentJob = jobs.get(jobId);
     if(!currentJob) throw new Error("no job exists with the provided jobId!");
 
-    // update the job
+    // update the job (for AI workload)
     jobs.set(jobId, {...currentJob, ...jobFieldsToUpdate});
 };
 
 const JOB_MAXLIFE_MIN = 60 * 1000 * 10; // 10 minutes
+
 // periodic cleanup function => function that runs every minute and removes jobs that are older than 10 minutes
 setInterval(() => {
     const now = Date.now(); // get the current time
@@ -72,6 +75,19 @@ export const getAllCategoryRecipes = async (req: Request, res: Response, next: N
             categoryRecipes,
         });
         
+    } catch(error){
+        next(error);
+    };
+};
+
+export const getAllPublicRecipes = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const publicRecipes = await getPublicRecipes();
+
+        res.json({
+            message: "Successfully fetched all public recipes!",
+            publicRecipes,
+        })
     } catch(error){
         next(error);
     };
@@ -156,6 +172,26 @@ export const createRecipe = async (req: Request, res: Response, next: NextFuncti
     } catch(error){
         next(error);
     }
+};
+
+export const searchUserRecipes = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { q } = req.query;
+        const userId = req.user.id;
+
+        console.log("user id is: ", userId);
+
+        if(!q) throw createHttpError.BadRequest("Missing required user search query!");
+
+        const recipes = await searchForUserRecipes(q as string, userId);
+
+        res.json({
+            message: "Successfully retrieved user recipes!",
+            userRecipes: recipes,
+        });
+    } catch(error){
+        next(error);
+    };
 };
 
 export const claimRecipe = async (req: Request, res: Response, next: NextFunction) => {
