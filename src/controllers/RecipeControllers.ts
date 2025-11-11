@@ -37,7 +37,7 @@ type Job = {
 };
 
 // define Job map object (for AI workload)
-const jobs = new Map<string, Job>(); // be updated overtime as the workflow progresses;
+const jobs = new Map<string, Job>(); // to be updated overtime as the workflow progresses;
 
 // define helper function to update the job map object
 export const updateJob = (jobId: string, jobFieldsToUpdate: Partial<Job> ) => {

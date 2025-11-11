@@ -78,7 +78,9 @@ export const signInUser = async (email: string, password: string) => {
 
     if(verifiedPassword){
         return foundUser;
-    };
+    } else {
+        throw createHttpError[401]("Invalid or missing user credentials!");
+    }
 };
 
 export const findUser = async (id: string) => {

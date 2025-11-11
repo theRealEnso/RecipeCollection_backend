@@ -107,4 +107,10 @@ const recipesSchema = new Schema(
     }
 );
 
+// index for Discover feed (public recipes, sorted by newest-oldest with tie-breaker)
+recipesSchema.index({ isPublic: 1, createdAt: -1, _id: -1 });
+
+// index for public recipes + simple name-based queries +, sorted by newest-oldest
+recipesSchema.index({ isPublic: 1, nameOfDish: 1, createdAt: -1, _id: -1 });
+
 export const RecipesModel = mongoose.models.RecipesModel || mongoose.model("RecipesModel", recipesSchema);

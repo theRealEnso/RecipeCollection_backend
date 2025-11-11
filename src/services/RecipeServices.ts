@@ -27,7 +27,7 @@ const stripCodeFences = (str: string) => {
   return out.trim();
 };
 
-// helper function that calculates the progress percent (For AI workload)
+// helper function that calculates / simulates + smoothens out the progress percent (For AI workload)
 const progressFromAccumulatedResponse = (accumulatedTextLength: number) => {
     const safe = Math.max(1, accumulatedTextLength); // just makes sure we don't compute log10(0) bc undefined
     const decades = Math.log10(safe); // convert accumulatedTextLength value to 0, 1, 2, 3, 4...
@@ -56,7 +56,7 @@ export const getPublicRecipes = async () => {
     if(!publicRecipes) throw createHttpError.NotFound("Public recipes not found!");
 
     return publicRecipes;
-}
+};
 
 export const getDetailedRecipe = async (recipeId: string) => {
     const recipe = await RecipesModel.findById(recipeId);
@@ -271,7 +271,7 @@ export const runRecipeGenerationJob = async (jobId: string, base64Image: string)
         let lastLength = 0;
         let baseline = 1;
 
-        //helper function that we need to pass into callOllamaStreaming function
+        //helper function that we need to pass into callOllamaStreaming function to sync accumulated streamed responses with progress
         const updateProgress = (accumulatedText: string) => {
             // pass in the accumulated recipe being built up in `fullText` to this function
             // get the length of the accumulated text
@@ -282,9 +282,9 @@ export const runRecipeGenerationJob = async (jobId: string, base64Image: string)
             if(accumulatedTextLength > lastLength){
                 lastLength = accumulatedTextLength;
                 const progressCompleted = progressFromAccumulatedResponse(accumulatedTextLength);
-                const clamped = Math.max(baseline, progressCompleted);
-                // console.log("progress percent has been updated to: ", clamped);
-                updateJob(jobId, {id: jobId, progress: clamped});
+                const clampedPercentage = Math.max(baseline, progressCompleted); // ends up being between 1 and 95
+                // console.log("progress percent has been updated to: ", clampedPercentage);
+                updateJob(jobId, {id: jobId, progress: clampedPercentage});
             };
         };
 
