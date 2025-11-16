@@ -7,7 +7,8 @@ import { authMiddleware } from "../middlewares/authMiddleware";
 // import controller functions
 import {
     getAllCategoryRecipes,
-    getAllPublicRecipes, 
+    getAllPublicRecipes,
+    getAllPublicRecipesPaged, 
     getRecipeDetails, 
     createRecipe,
     searchUserRecipes, 
@@ -23,6 +24,7 @@ const router = express.Router();
 
 router.route("/get-category-recipes/:categoryId").get(trimRequest.all, authMiddleware, getAllCategoryRecipes);
 router.route("/get-public-recipes/").get(trimRequest.all, authMiddleware, getAllPublicRecipes);
+router.route("/public-recipes/paged").get(trimRequest.all, authMiddleware, getAllPublicRecipesPaged);
 router.route("/get-category-recipes/recipe/:recipeId").get(trimRequest.all, authMiddleware, getRecipeDetails);
 router.route("/get-cloudinary-signature").get(trimRequest.all, authMiddleware, getCloudinarySignature);
 router.route("/create-cloudinary-image-url").post(trimRequest.all, authMiddleware, createCloudinaryImageUrl);

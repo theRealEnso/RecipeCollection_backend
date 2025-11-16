@@ -18,8 +18,15 @@ import createHttpError from "http-errors";
 
 import recipeGenerationPrompt from "../constants/AI_prompts";
 
+// import RecipesModel
+import { RecipesModel } from "../models/RecipesModel";
+
 // import type(s)
 import { RecipeDocument } from "../types/Recipe";
+import mongoose from "mongoose";
+
+// limit for paged results
+const DEFAULT_ITEM_LIMIT = 20;
 
 // ai server endpoint
 const AI_SERVER_LOCALHOST_ENDPOINT = process.env.PROXY_SERVER_WSL_TO_OLLAMA_ON_WINDOWS;
@@ -88,6 +95,74 @@ export const getAllPublicRecipes = async (req: Request, res: Response, next: Nex
             message: "Successfully fetched all public recipes!",
             publicRecipes,
         })
+    } catch(error){
+        next(error);
+    };
+};
+
+export const getAllPublicRecipesPaged = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        // endpoint/?limit=20&cursor="bookmark string consisting of createdAt and ID info of recipe"&q=${debouncedSearch}
+        const rawLimit = req.query.limit;
+        const limit = rawLimit && Number(rawLimit) <= DEFAULT_ITEM_LIMIT ? DEFAULT_ITEM_LIMIT : DEFAULT_ITEM_LIMIT;
+
+        const q = req.query.q as string | undefined;
+
+        const cursor = req.query.cursor as string | undefined;
+
+        // define a base filter
+        const filter: mongoose.FilterQuery<typeof RecipesModel> = {
+            isPublic: true
+        };
+        
+        // if user ends searching for something and we receive q / query, then we need to expand the filter to handle user search
+        if(q && q.length){
+            filter.nameOfDish = {
+                $regex: q,
+                $options: "i"
+            }
+        };
+
+        // handle cursor
+        // cursor is going to be a string that looks like date|recipeId as a string
+        // process the string cursor to extract the date and the ID from the string, and then expand our filter to handle searching for recipes based on that information => filter recipes older than the date(s)
+        let createdAtCursor;
+        let idCursor;
+        if(cursor){
+            const [createdAtStr, idStr] = cursor.split("|");
+            if(createdAtStr && idStr){
+                createdAtCursor = new Date(createdAtStr); // converting string to date object
+                idCursor = new mongoose.Types.ObjectId(idStr) // converting string to mongoose objectId
+
+                filter.$or = [
+                    {createdAt: {$lt: createdAtCursor}},
+                    {createdAt: createdAtCursor, _id: {$lt: idCursor}}
+                ];
+            };
+        };
+
+        const sort: Record<string, 1 | -1> = {createdAt: -1, _id: -1} // this is sorting by newest to oldest in descending order
+
+        // query the database
+        const docs = await RecipesModel.find(filter)
+            .sort(sort)
+            .limit(limit + 1) // add one to limit, helps us determine if there is a next page of items
+            .select("_id nameOfDish difficultyLevel timeToCook imageUrl createdAt")
+            .lean()
+
+        // compute the nextCursor (bookmark) to send to the front end
+        let nextCursor = null;
+        if(docs.length > limit){
+            const lastIncludedItem = docs[limit - 1];
+            nextCursor = `${new Date(lastIncludedItem.createdAt).toISOString()}|${lastIncludedItem._id}`;
+            docs.splice(limit); // only return the "limit" aka 20 items in the array
+        };
+
+        res.json({
+            items: docs,
+            nextCursor,
+        });
+
     } catch(error){
         next(error);
     };
