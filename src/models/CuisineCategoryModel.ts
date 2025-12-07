@@ -1,7 +1,7 @@
 import mongoose, {Document} from "mongoose";
 
-const {Schema} = mongoose;
-const {ObjectId} = mongoose.Schema.Types;
+const { Schema } = mongoose;
+const { ObjectId } = mongoose.Schema.Types;
 
 // export type Category = {
 //     user: string;

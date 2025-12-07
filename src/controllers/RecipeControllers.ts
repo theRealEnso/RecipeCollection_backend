@@ -87,19 +87,6 @@ export const getAllCategoryRecipes = async (req: Request, res: Response, next: N
     };
 };
 
-export const getAllPublicRecipes = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const publicRecipes = await getPublicRecipes();
-
-        res.json({
-            message: "Successfully fetched all public recipes!",
-            publicRecipes,
-        })
-    } catch(error){
-        next(error);
-    };
-};
-
 export const getAllPublicRecipesPaged = async (req: Request, res: Response, next: NextFunction) => {
     try {
         // endpoint/?limit=20&cursor="bookmark string consisting of createdAt and ID info of recipe"&q=${debouncedSearch}
@@ -115,17 +102,22 @@ export const getAllPublicRecipesPaged = async (req: Request, res: Response, next
             isPublic: true
         };
         
-        // if user ends searching for something and we receive q / query, then we need to expand the filter to handle user search
+        // if user ends searching for something and we receive q / query, then we need to expand the filter to handle user search query
         if(q && q.length){
-            filter.nameOfDish = {
-                $regex: q,
-                $options: "i"
-            }
+            filter.$or = [
+                {nameOfDish: {$regex: q, $options: "i"}},
+                {recipeOwner: {$regex: q, $options: "i"}}
+            ]
+
+            // filter.nameOfDish = {
+            //     $regex: q,
+            //     $options: "i"
+            // }
         };
 
-        // handle cursor
+        // handle cursor => Use to modify / expand search filter to assist in fetching next 20 recipes
         // cursor is going to be a string that looks like date|recipeId as a string
-        // process the string cursor to extract the date and the ID from the string, and then expand our filter to handle searching for recipes based on that information => filter recipes older than the date(s)
+        // process the string cursor to extract the date and the ID from the string, and then expand our filter to handle searching for recipes based on that information (filter recipes older than the date(s))
         let createdAtCursor;
         let idCursor;
         if(cursor){
@@ -148,7 +140,7 @@ export const getAllPublicRecipesPaged = async (req: Request, res: Response, next
             .sort(sort)
             .limit(limit + 1) // add one to limit, helps us determine if there is a next page of items
             .select("_id nameOfDish difficultyLevel timeToCook imageUrl createdAt")
-            .lean()
+            .lean();
 
         // compute the nextCursor (bookmark) to send to the front end
         let nextCursor = null;
@@ -261,7 +253,7 @@ export const searchUserRecipes = async (req: Request, res: Response, next: NextF
         const recipes = await searchForUserRecipes(q as string, userId);
 
         res.json({
-            message: "Successfully retrieved user recipes!",
+            message: "Successfully retrieved searched recipes!",
             userRecipes: recipes,
         });
     } catch(error){
@@ -272,7 +264,7 @@ export const searchUserRecipes = async (req: Request, res: Response, next: NextF
 export const claimRecipe = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { recipeId } = req.params;
-        const userId = req.user._id;
+        const userId = req.user.id;
 
         if(!recipeId || userId) throw createHttpError.BadRequest("Recipe ID and User ID are missing!");
 
@@ -438,7 +430,9 @@ export const createCloudinaryImageUrl = async (req: Request, res: Response, next
     };
 };
 
-//legacy endpoint
+// **************************   LEGACY FUNCTION(s)  *******************************************
+
+//legacy functions
 export const generateRecipeFromImage = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { base64Image } = req.body;
@@ -479,3 +473,17 @@ export const generateRecipeFromImage = async (req: Request, res: Response, next:
 
 
 // `{"model":"llava:7b","created_at":"2025-10-14T02:01:45.0148537Z","response":"7","done":false}\n{"model":"llava:7b","created_at":"2025-10-14T02:01:45.0224356Z","response":"-","done":false}\n`
+
+export const getAllPublicRecipes = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const publicRecipes = await getPublicRecipes();
+
+        res.json({
+            message: "Successfully fetched all public recipes!",
+            publicRecipes,
+        })
+    } catch(error){
+        next(error);
+    };
+};
+

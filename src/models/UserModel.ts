@@ -4,15 +4,17 @@ import bcrypt from "bcrypt"
 import logger from "../configs/winston-logger";
 
 const { Schema } = mongoose;
+const { ObjectId } = mongoose.Schema.Types;
 
 //define typescript interface for new user documents
-interface NewUser extends Document {
+export interface NewUser extends Document {
     firstName: string,
     lastName: string,
     email: string,
     password: string,
     $isNew: boolean;
     image: string;
+    favoriteRecipes: typeof ObjectId[];
 };
 
 //create user schema
@@ -57,15 +59,21 @@ const userSchema = new Schema<NewUser>({
         required: true,
     },
 
+    favoriteRecipes: {
+        type: [ObjectId],
+        ref: "RecipesModel",
+        default: [],
+    },
+
 }, {collection: "users", timestamps: true,});
 
 //hash user password using bcrypt before a user document is saved
-userSchema.pre<NewUser>("save", function(next){
+userSchema.pre<NewUser>("save", async function(next){
     if(this.$isNew){
         const saltRounds = 12;
         const plainPassword = this.password;
 
-        bcrypt.hash(plainPassword, saltRounds, (error, hash) => {
+        await bcrypt.hash(plainPassword, saltRounds, (error, hash) => {
             if(error){
                 logger.error(error);
                 return next(error as Error);

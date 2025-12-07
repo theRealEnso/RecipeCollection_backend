@@ -115,7 +115,7 @@ export const createNewRecipe = async (recipeData: RecipeData) => {
 export const searchForUserRecipes = async (searchQuery: string, userId: string) => {
     try {
         const searchRegex = new RegExp(searchQuery, "i"); //make searchQuery case insensitive
-        // ex: if searchQuery is "hello" or "HELLO"... it will match to all of these in the search
+        // ex: if searchQuery is "hello" or "HELLO"... it will match to both of these in the search
 
         // define search criteria
         const searchCriterion = {

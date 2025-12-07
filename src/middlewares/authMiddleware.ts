@@ -26,6 +26,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
 
         const accessToken = authParts[1];
         
+        //verifiedUser === decoded payload === user id
         const verifiedUser = await verifyToken(accessToken, SECRET_ACCESS_TOKEN as Secret);
 
         if (
@@ -38,8 +39,8 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
         }
     } catch(error: any){ // error comes in form of an object--can add extra properties onto this object
         if(error instanceof TokenExpiredError){
-            (error as any).status = 401; // add `status property, set to 401
-            error.message = "Access token has expired!" // add a message property
+            (error as any).status = 401; // add `status` property to error object, set to 401
+            error.message = "Access token has expired!" // add a message property to error object
         };
         
         if(error instanceof JsonWebTokenError){

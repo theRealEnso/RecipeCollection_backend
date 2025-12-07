@@ -1,7 +1,10 @@
 import { UserModel } from "../models/UserModel";
+import { RecipesModel } from "../models/RecipesModel";
 import createHttpError from "http-errors";
 import validator from "validator";
 import bcrypt from "bcrypt";
+
+import { NewUser } from "../models/UserModel";
 
 export type UserData = {
     firstName: string;
@@ -89,4 +92,45 @@ export const findUser = async (id: string) => {
     if(!foundUser) throw createHttpError.NotFound("User not found!");
 
     return foundUser;
+};
+
+// helper services functions for adding, removing, and fetching favorite recipes
+
+export const addToFavoriteRecipes = async (userId: string, recipeId: string) => {
+
+    const recipe = await RecipesModel.findById(recipeId);
+    if(!recipe) throw createHttpError.NotFound("Recipe not found!");
+
+    const updatedUser = await UserModel.findByIdAndUpdate(
+        userId, 
+        {$addToSet: {favoriteRecipes: recipe._id}}, 
+        {new: true},
+    );
+
+    if(!updatedUser) throw createHttpError.NotFound("User not found!");
+
+    return updatedUser;
+};
+
+export const removeFromFavorites = async (userId: string, recipeId: string) => {
+    const recipe = await RecipesModel.findById(recipeId);
+    if(!recipe) throw createHttpError.NotFound("Recipe not found!");
+
+    const updatedUser = await UserModel.findByIdAndUpdate(
+        userId,
+        {$pull: {favoriteRecipes: recipe._id}},
+        {new: true},
+    );
+
+    if(!updatedUser) throw createHttpError.NotFound("User not found!");
+
+    return updatedUser;
+};
+
+export const getFavoriteRecipes = async (userId: string) => {
+    const user = await UserModel.findById(userId).populate("favoriteRecipes");
+
+    if(!user) throw createHttpError.NotFound("User not found!");
+
+    return user.favoriteRecipes;
 };

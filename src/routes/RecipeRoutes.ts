@@ -40,7 +40,7 @@ router.route("/get-generated-recipe/:jobId").get(trimRequest.all, authMiddleware
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-// legacy endpoint
+// legacy endpoint(s)
 router.route("/generate-recipe-from-image").post(trimRequest.all, authMiddleware, generateRecipeFromImage); // send generated recipe
 
 

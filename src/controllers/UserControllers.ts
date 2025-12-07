@@ -5,7 +5,14 @@ import { Secret } from "jsonwebtoken";
 
 import cloudinary from "../configs/cloudinary";
 
-import { createAndAddUserToDB, signInUser, findUser } from "../services/UserServices";
+import { 
+    createAndAddUserToDB, 
+    signInUser, 
+    findUser, 
+    addToFavoriteRecipes,
+    removeFromFavorites,
+    getFavoriteRecipes, 
+} from "../services/UserServices";
 
 //import utility functions
 import { formatName } from "../utils/FormatName";
@@ -27,7 +34,14 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
         let accessToken;
         let refreshToken;
 
-        const {firstName, lastName, email, password, confirmPassword, profilePicture } = req.body;
+        const { 
+            firstName, 
+            lastName, 
+            email,
+            password, 
+            confirmPassword, 
+            profilePicture 
+        } = req.body;
     
         if(
             !firstName ||
@@ -68,6 +82,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
                 lastName: newUser.lastName,
                 email: newUser.email,
                 picture: newUser.image,
+                favoriteRecipes: [],
             },
             access_token: accessToken,
             refresh_token: refreshToken,
@@ -78,7 +93,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
 };
 
 export const login = async (req: Request, res: Response, next: NextFunction) => {
-    const {email, password} = req.body;
+    const { email, password } = req.body;
 
     if(!email || !password) throw createHttpError.BadRequest("Missing required fields!");
 
@@ -107,6 +122,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
                 lastName: user.lastName,
                 email: user.email,
                 picture: user.image,
+                favoriteRecipes: user.favoriteRecipes,
             },
             access_token: accessToken,
             refresh_token: refreshToken,
@@ -165,6 +181,62 @@ export const getCloudinarySignatureProfilePic = async (req: Request, res: Respon
             uploadPreset: process.env.CLOUDINARY_SIGNED_UPLOAD_PRESET,
             folder: "recipeAppUserProfilePictures",
         });
+    } catch(error){
+        next(error);
+    };
+};
+
+// *****    controller functions for fetching, adding, and removing recipes from favorites  *****
+
+export const addRecipeToFavorites = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.user.id;
+        const recipeId = req.params.recipeId;
+
+        if(!userId) throw createHttpError.Unauthorized("User is not authenticated");
+
+        const updatedUser = await addToFavoriteRecipes(userId, recipeId);
+
+        res.json({
+            message: "Successfully added recipe to favorites!",
+            favoriteRecipes: updatedUser.favoriteRecipes,
+        });
+
+    } catch(error){
+        next(error);
+    };
+};
+
+export const removeRecipeFromFavorites = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.user.id;
+        const recipeId = req.params.recipeId;
+
+        if(!userId) throw createHttpError.Unauthorized("User is not authenticated!");
+
+        const updatedUser = await removeFromFavorites(userId, recipeId);
+
+        res.json({
+            message: "Successfully removed recipe from favorites!",
+            favoriteRecipes: updatedUser.favoriteRecipes,
+        });
+    } catch(error){
+        next(error);
+    };
+};
+
+export const getAllFavoriteRecipes = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.user.id;
+
+        if(!userId) throw createHttpError.Unauthorized("User is not authenticated!");
+
+        const allFavoriteRecipes = await getFavoriteRecipes(userId);
+
+        res.json({
+            message: "Successfully fetched all favorited recipes!",
+            favoriteRecipes: allFavoriteRecipes,
+        })
     } catch(error){
         next(error);
     };
