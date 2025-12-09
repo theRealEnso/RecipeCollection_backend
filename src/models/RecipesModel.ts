@@ -99,6 +99,47 @@ const recipesSchema = new Schema(
             type: Date,
             default: null,
         },
+
+        reviews: [
+            {
+                user: {
+                    type: ObjectId,
+                    ref: "UserModel",
+                    required: true,
+                },
+
+                rating: {
+                    type: Number,
+                    required: true,
+                    min: 1,
+                    max: 5,
+                },
+
+                comment: {
+                    type: String,
+                    trim: true,
+                },
+
+                createdAt: {
+                    type: Date,
+                    default: Date.now,
+                },
+
+                updatedAt: {
+                    type: Date,
+                }
+            }
+        ],
+
+        averageRating: {
+            type: Number,
+            default: 0,
+        },
+
+        ratingCount: {
+            type: Number,
+            default: 0,
+        }
     },
 
     {

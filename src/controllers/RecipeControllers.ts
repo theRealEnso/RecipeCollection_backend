@@ -9,7 +9,9 @@ import {
     createNewRecipe,
     searchForUserRecipes,
     updateRecipe,
-    runRecipeGenerationJob
+    runRecipeGenerationJob,
+    addReview,
+    deleteRecipeReview,
 } from "../services/RecipeServices";
 
 import cloudinary from "../configs/cloudinary";
@@ -288,6 +290,50 @@ export const claimRecipe = async (req: Request, res: Response, next: NextFunctio
     };
 };
 
+// *****    controller(s) for ratings and reviews   *****
+
+export const addNewReview =  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.user.id;
+        const { recipeId } = req.params;
+        const { rating, comment } = req.body;
+
+        if(!userId) throw createHttpError(401, "Invalid user credentials. Please log back in!");
+
+        if(!recipeId || !rating || !comment) throw createHttpError(400, "Rating, comment, or recipe ID is missing and is required");
+
+        if(rating < 1 || rating > 5) throw createHttpError(400, "Rating must be between 1 and 5");
+
+        const updatedRecipe = await addReview(userId, recipeId, rating, comment);
+
+        res.json({
+            message: "Successfully added a new review!",
+            updatedRecipe,
+        })
+    } catch(error){
+        next(error);
+    };
+};
+
+export const deleteReview =  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.user.id;
+        const { recipeId } = req.params;
+
+        if(!userId) throw createHttpError(401, "Invalid user credentials. Please log back in!");
+        if(!recipeId) throw createHttpError(400, "Missing recipe ID");
+
+        const updatedRecipe = await deleteRecipeReview(userId, recipeId);
+
+        res.json({
+            message: "Successfully deleted user review!",
+            updatedRecipe,
+        })
+    } catch(error){
+        next(error);
+    };
+};
+
 
 //////////              *** for AI recipe generation endpoints *** 
 export const startRecipeGenerationJob = async (req: Request, res: Response, next: NextFunction) => {
@@ -430,7 +476,7 @@ export const createCloudinaryImageUrl = async (req: Request, res: Response, next
     };
 };
 
-// **************************   LEGACY FUNCTION(s)  *******************************************
+// **************************   LEGACY FUNCTION(S)  *******************************************
 
 //legacy functions
 export const generateRecipeFromImage = async (req: Request, res: Response, next: NextFunction) => {

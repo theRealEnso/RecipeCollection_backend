@@ -159,7 +159,86 @@ export const updateRecipe = async (recipeId: string, userId: string) => {
     if(!updatedRecipe) throw createHttpError[500]("Failed to claim recipe!");
 
     return updatedRecipe;
-}
+};
+
+// *****    service function(s) for ratings and reviews *****
+
+// helper function to help with computing the average rating
+const updateRatings = (recipe: RecipeDocument) => {
+    //loop through each item in the array, compute the sum of all ratings, and then divide by array length to get the average
+    const reviews = recipe.reviews || [];
+
+    if(reviews.length === 0){
+        recipe.averageRating = 0;
+        recipe.ratingCount = 0;
+        return;
+    };
+
+    const totalSum = reviews.reduce((accumulator, currentValue) => accumulator + currentValue.rating, 0);
+    
+    recipe.averageRating = totalSum / reviews.length;
+    recipe.ratingCount = reviews.length
+};
+
+export const addReview = async (userId: string, recipeId: string, rating: number, comment: string) => {
+    const recipe = await RecipesModel.findById(recipeId);
+
+    if(!recipe) throw createHttpError(404, "Recipe not found!");
+
+    // initialize reviews array as empty if non-existent
+    if(!recipe.reviews || !recipe.reviews.length){
+        recipe.reviews = [];
+    };
+
+    // need to check if user already has a review. If so then update existing. Otherwise, create a new review and append the review object to the reviews array
+    let existingReviewIndex = recipe.reviews.findIndex((review: any) => review.user.toString() === userId);
+    if(existingReviewIndex > -1){
+        // existing review is found
+        recipe.reviews[existingReviewIndex].rating = rating;
+        recipe.reviews[existingReviewIndex].comment = comment;
+        recipe.reviews[existingReviewIndex].updatedAt = new Date();
+    } else {
+        // no existing review. Create a new review and push to reviews array
+        recipe.reviews.push({
+            user: new mongoose.Types.ObjectId(userId),
+            rating,
+            comment,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+    };
+
+    updateRatings(recipe);
+
+    const savedRecipe = await recipe.save();
+
+    if(!savedRecipe) throw createHttpError(500, "Failed to save the review for the recipe");
+
+    return savedRecipe;
+};
+
+export const deleteRecipeReview = async (userId: string, recipeId: string) => {
+    const updatedRecipe = await RecipesModel.findOneAndUpdate(
+        {
+            _id: recipeId,
+            "reviews.user": userId,
+        },
+        {
+            $pull: {reviews: {user: new mongoose.Types.ObjectId(userId)}}
+        },
+        {new: true},
+    )
+
+    if(!updatedRecipe) throw createHttpError(404, "Recipe or review for user not found!");
+
+    updateRatings(updatedRecipe as RecipeDocument);
+
+    const savedRecipe = await updatedRecipe.save();
+
+    if(!savedRecipe) throw createHttpError(500, "Failed to delete review for recipe");
+
+    return savedRecipe;
+};
 
 //ultimately resolves with a completed extracted recipe from the AI model,
 //also needs to somehow calculate the progress completed as the recipe is being extracted in realtime

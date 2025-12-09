@@ -37,6 +37,14 @@ export type RecipeData = {
     isClaimed: boolean,
 };
 
+type Review = {
+    user: string,
+    rating: number,
+    comment: string,
+    createdAt: Date,
+    updatedAt: Date,
+};
+
 export type RecipeDocument = {
     _id: string;
     cuisineCategory: string;
@@ -60,4 +68,7 @@ export type RecipeDocument = {
     isClaimed: boolean;
     createdAt: Date;
     updatedAt: Date;
+    reviews: Review[],
+    averageRating: number,
+    ratingCount: number,
 };
