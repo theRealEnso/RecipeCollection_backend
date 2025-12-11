@@ -36,16 +36,16 @@ const progressFromAccumulatedResponse = (accumulatedTextLength: number) => {
 };
 
 export const getRecipes = async (categoryId: string) => {
-    // string needs to be converted to ObjectId because thats how cuisineCategory is stored in our model/schema and DB
+    // string needs to be converted to ObjectId because that is the data type of how cuisineCategory is stored in our model/schema and DB
     const categoryObjectId = new mongoose.Types.ObjectId(categoryId);
 
-    console.log(typeof categoryObjectId);
+    // console.log(typeof categoryObjectId);
 
     const recipes = await RecipesModel.find({
         cuisineCategory: categoryObjectId,
     });
 
-    // if(recipes.length === 0) throw createHttpError[500]("Something went wrong!");
+    if(!recipes || recipes.length === 0) throw createHttpError(404, "No recipes found for cuisine category!");
 
     return recipes;
 };
@@ -59,7 +59,10 @@ export const getPublicRecipes = async () => {
 };
 
 export const getDetailedRecipe = async (recipeId: string) => {
-    const recipe = await RecipesModel.findById(recipeId);
+    const recipe = await RecipesModel.findById(recipeId).populate({
+        path: "reviews.user",
+        select: "firstName lastName image",
+    })
 
     if(!recipe) throw createHttpError.NotFound("Recipe not found!");
 
