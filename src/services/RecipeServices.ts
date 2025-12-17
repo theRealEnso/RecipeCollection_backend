@@ -2,7 +2,9 @@ import axios from "axios";
 
 import mongoose from "mongoose";
 
+// import model(s)
 import { RecipesModel } from "../models/RecipesModel";
+import { UserModel } from "../models/UserModel";
 
 //import type(s)
 import { RecipeData, RecipeDocument } from "../types/Recipe";
@@ -12,7 +14,7 @@ import createHttpError from "http-errors";
 import recipeGenerationPrompt from "../constants/AI_prompts";
 
 import { updateJob } from "../controllers/RecipeControllers";
-import { UserModel } from "../models/UserModel";
+
 
 // ai server endpoint
 const AI_SERVER_LOCALHOST_ENDPOINT = process.env.PROXY_SERVER_WSL_TO_OLLAMA_ON_WINDOWS;
@@ -61,8 +63,8 @@ export const getPublicRecipes = async () => {
 export const getDetailedRecipe = async (recipeId: string) => {
     const recipe = await RecipesModel.findById(recipeId).populate({
         path: "reviews.user",
-        select: "firstName lastName image",
-    })
+        select: "_id firstName lastName image",
+    });
 
     if(!recipe) throw createHttpError.NotFound("Recipe not found!");
 
@@ -164,7 +166,7 @@ export const updateRecipe = async (recipeId: string, userId: string) => {
     return updatedRecipe;
 };
 
-// *****    service function(s) for ratings and reviews *****
+// *****    service functions for ratings and reviews *****
 
 // helper function to help with computing the average rating
 const updateRatings = (recipe: RecipeDocument) => {
@@ -243,8 +245,8 @@ export const deleteRecipeReview = async (userId: string, recipeId: string) => {
     return savedRecipe;
 };
 
-//ultimately resolves with a completed extracted recipe from the AI model,
-//also needs to somehow calculate the progress completed as the recipe is being extracted in realtime
+// *****    service functions AI recipe generation *****
+//ultimately resolves with a completed extracted recipe from the AI model that matches our schema
 const callOllamaStreaming = async (base64Image: string, updateProgress: (accumulatedText: string) => void) => {
     // console.log(base64Image);
 

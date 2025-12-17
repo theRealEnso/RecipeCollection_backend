@@ -46,8 +46,6 @@ router.route("/get-updated-recipe-generation-status/:jobId").get(trimRequest.all
 
 router.route("/get-generated-recipe/:jobId").get(trimRequest.all, authMiddleware, getGeneratedRecipe); // provide job status
 
-
-
 //          *****   legacy endpoint(s)  *****
 router.route("/generate-recipe-from-image").post(trimRequest.all, authMiddleware, generateRecipeFromImage); // send generated recipe
 

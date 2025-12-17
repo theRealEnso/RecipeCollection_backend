@@ -45,11 +45,11 @@ type Job = {
     createdAt: number; // timestamp of when the job was created, but to be used to help cleanup later
 };
 
-// define Job map object (for AI workload)
+// define Job map object (for AI recipe generation workload)
 const jobs = new Map<string, Job>(); // to be updated overtime as the workflow progresses;
 
 // define helper function to update the job map object
-export const updateJob = (jobId: string, jobFieldsToUpdate: Partial<Job> ) => {
+export const updateJob = (jobId: string, jobFieldsToUpdate: Partial<Job>) => {
     const currentJob = jobs.get(jobId);
     if(!currentJob) throw new Error("no job exists with the provided jobId!");
 
@@ -290,7 +290,7 @@ export const claimRecipe = async (req: Request, res: Response, next: NextFunctio
     };
 };
 
-// *****    controller(s) for ratings and reviews   *****
+//////////              *** controllers for ratings and reviews *** 
 
 export const addNewReview =  async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -334,8 +334,7 @@ export const deleteReview =  async (req: Request, res: Response, next: NextFunct
     };
 };
 
-
-//////////              *** for AI recipe generation endpoints *** 
+//////////              *** controllers for AI recipe generation *** 
 export const startRecipeGenerationJob = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { base64Image } = req.body;
@@ -366,7 +365,7 @@ export const startRecipeGenerationJob = async (req: Request, res: Response, next
         next(error);
     };
 };
-// endpoint for front end to check / poll job status
+
 export const getRecipeGenerationJobStatus = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const jobId = req.params.jobId; // get job ID from front end
@@ -385,7 +384,7 @@ export const getRecipeGenerationJobStatus = async (req: Request, res: Response, 
         next(error);
     }
 };
-// endpoint for frontend to get the generated recipe
+
 export const getGeneratedRecipe = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const jobId = req.params.jobId; // get job ID from the front end
@@ -476,9 +475,8 @@ export const createCloudinaryImageUrl = async (req: Request, res: Response, next
     };
 };
 
-// **************************   LEGACY FUNCTION(S)  *******************************************
+// **************************   LEGACY CONTROLLER FUNCTION(S)  *******************************************
 
-//legacy functions
 export const generateRecipeFromImage = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { base64Image } = req.body;
