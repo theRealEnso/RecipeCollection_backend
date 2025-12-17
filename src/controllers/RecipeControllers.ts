@@ -290,7 +290,7 @@ export const claimRecipe = async (req: Request, res: Response, next: NextFunctio
     };
 };
 
-//////////              *** controllers for ratings and reviews *** 
+///////////////              *** controllers for ratings and reviews ***    ///////////////
 
 export const addNewReview =  async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -334,7 +334,7 @@ export const deleteReview =  async (req: Request, res: Response, next: NextFunct
     };
 };
 
-//////////              *** controllers for AI recipe generation *** 
+/////////////              *** controllers for AI recipe generation ***    ////////////////// 
 export const startRecipeGenerationJob = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { base64Image } = req.body;
@@ -403,7 +403,7 @@ export const getGeneratedRecipe = async (req: Request, res: Response, next: Next
     }
 };
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////              *** controllers for cloudinary ***     //////////////////////////////
 
 //generating signature to upload image to cloudinary using SIGNED preset
 export const getCloudinarySignature = async (req: Request, res: Response, next: NextFunction) => {

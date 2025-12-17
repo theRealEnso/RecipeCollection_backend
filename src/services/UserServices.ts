@@ -94,7 +94,7 @@ export const findUser = async (id: string) => {
     return foundUser;
 };
 
-// helper services functions for adding, removing, and fetching favorite recipes
+/////////   *****   helper services functions for adding, removing, and fetching favorite recipes   *****   //////
 
 export const addToFavoriteRecipes = async (userId: string, recipeId: string) => {
 

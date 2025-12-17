@@ -186,7 +186,7 @@ export const getCloudinarySignatureProfilePic = async (req: Request, res: Respon
     };
 };
 
-// *****    controller functions for fetching, adding, and removing recipes from favorites  *****
+/////// *****    controller functions for fetching, adding, and removing recipes from favorites  ***** ///////
 
 export const addRecipeToFavorites = async (req: Request, res: Response, next: NextFunction) => {
     try {
