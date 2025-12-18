@@ -122,12 +122,13 @@ export const searchForUserRecipes = async (searchQuery: string, userId: string) 
         const searchRegex = new RegExp(searchQuery, "i"); //make searchQuery case insensitive
         // ex: if searchQuery is "hello" or "HELLO"... it will match to both of these in the search
 
-        // define search criteria
+        // define our filter for search criteria
         const searchCriterion = {
             ownerUserId: userId, // search for recipes owned by the user
             $or: [
                 {nameOfDish: {$regex: searchRegex}}, // user can search for the name of the dish
-                {recipeOwner: {$regex: searchRegex}} // user can search for the name of the recipe owner / creator
+                {recipeOwner: {$regex: searchRegex}}, // user can search for the name of the recipe owner / creator
+                {categoryName: {$regex: searchRegex}}, // user can search for the name of the recipe owner / creator
             ]
         };
 

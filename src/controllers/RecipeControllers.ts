@@ -108,7 +108,8 @@ export const getAllPublicRecipesPaged = async (req: Request, res: Response, next
         if(q && q.length){
             filter.$or = [
                 {nameOfDish: {$regex: q, $options: "i"}},
-                {recipeOwner: {$regex: q, $options: "i"}}
+                {recipeOwner: {$regex: q, $options: "i"}},
+                {categoryName: {$regex: q, $options: "i"}},
             ]
 
             // filter.nameOfDish = {
