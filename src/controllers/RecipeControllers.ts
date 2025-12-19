@@ -120,7 +120,7 @@ export const getAllPublicRecipesPaged = async (req: Request, res: Response, next
 
         // handle cursor => Use to modify / expand search filter to assist in fetching next 20 recipes
         // cursor is going to be a string that looks like date|recipeId as a string
-        // process the string cursor to extract the date and the ID from the string, and then expand our filter to handle searching for recipes based on that information (filter recipes older than the date(s))
+        // process the string cursor to extract the date and the ID from the string, and then expand our filter to handle searching for recipes based on that information (filter recipes older than the date of the cursor / bookmark and/or filter recipes where the ID's are older than the cursor / bookmark)
         let createdAtCursor;
         let idCursor;
         if(cursor){
@@ -148,7 +148,8 @@ export const getAllPublicRecipesPaged = async (req: Request, res: Response, next
         // compute the nextCursor (bookmark) to send to the front end
         let nextCursor = null;
         if(docs.length > limit){
-            const lastIncludedItem = docs[limit - 1];
+            // const lastIncludedItem = docs[limit - 1]; // or docs[docs.length - 1]?
+            const lastIncludedItem = docs[docs.length - 1];
             nextCursor = `${new Date(lastIncludedItem.createdAt).toISOString()}|${lastIncludedItem._id}`;
             docs.splice(limit); // only return the "limit" aka 20 items in the array
         };
