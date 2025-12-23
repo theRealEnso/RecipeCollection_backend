@@ -20,6 +20,7 @@ import {
     getGeneratedRecipe,
     addNewReview,
     deleteReview,
+    getRecipeReviewsPaged
 } from "../controllers/RecipeControllers";
 
 const router = express.Router();
@@ -38,6 +39,7 @@ router.route("/create-cloudinary-image-url").post(trimRequest.all, authMiddlewar
 //          ***** endpoint(s) for recipe ratings, reviews, and comments *****
 router.route("/:recipeId/reviews").post(trimRequest.all, authMiddleware, addNewReview);
 router.route("/:recipeId/reviews").delete(trimRequest.all, authMiddleware, deleteReview);
+router.route("/:recipeId/reviews/paged").get(trimRequest.all, authMiddleware, getRecipeReviewsPaged);
 
 //          *****   endpoint(s) for AI recipe generation workflow   *****
 router.route("/start-recipe-generation").post(trimRequest.all, authMiddleware, startRecipeGenerationJob); // start LLM work

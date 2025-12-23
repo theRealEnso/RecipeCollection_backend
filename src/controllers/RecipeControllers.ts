@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import axios from "axios";
+import axios, { all } from "axios";
 import { v4 as uuidv4 } from 'uuid';
 
 import {
@@ -29,6 +29,9 @@ import mongoose from "mongoose";
 
 // limit for paged results
 const DEFAULT_ITEM_LIMIT = 20;
+
+// limit for recipe reviews
+const RECIPE_REVIEWS_LIMIT = 10;
 
 // ai server endpoint
 const AI_SERVER_LOCALHOST_ENDPOINT = process.env.PROXY_SERVER_WSL_TO_OLLAMA_ON_WINDOWS;
@@ -126,7 +129,7 @@ export const getAllPublicRecipesPaged = async (req: Request, res: Response, next
         if(cursor){
             const [createdAtStr, idStr] = cursor.split("|");
             if(createdAtStr && idStr){
-                createdAtCursor = new Date(createdAtStr); // converting string to date object
+                createdAtCursor = new Date(createdAtStr); // converting date string back to date object
                 idCursor = new mongoose.Types.ObjectId(idStr) // converting string to mongoose objectId
 
                 filter.$or = [
@@ -175,6 +178,72 @@ export const getRecipeDetails = async (req: Request, res: Response, next: NextFu
         res.json({
             message: "Successfully fetched recipe details!",
             recipeDetails,
+        });
+
+    } catch(error){
+        next(error);
+    };
+};
+
+export const getRecipeReviewsPaged = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { recipeId } = req.params;
+        const rawLimit = req.query.limit as string;
+        const cursor = req.query.cursor as string | undefined;
+
+        if(!recipeId) throw createHttpError(400, "recipe ID is missing");
+
+        const recipe = await RecipesModel.findById(recipeId).populate({
+            path: "reviews.user",
+            select: "_id firstName lastName image"
+        });
+
+        const allReviews = recipe.reviews;
+
+        let filteredReviews = allReviews;
+
+        // force limit to always be 10 reviews
+        const limit = rawLimit && Number(rawLimit) > RECIPE_REVIEWS_LIMIT ? RECIPE_REVIEWS_LIMIT : RECIPE_REVIEWS_LIMIT;
+
+        // handle / process the cursor
+        // cursor is going to look something like date|id in some sort of string format
+        if(cursor){
+            const [createdAtStr, idStr] = cursor.split("|");
+            if(createdAtStr && idStr){
+                filteredReviews = filteredReviews.filter((review: any) => {
+                    const createdAtCursor = new Date(createdAtStr);
+                    const idCursor = new mongoose.Types.ObjectId(idStr);
+                    // get the next 10 reviews that are older than the createdAt timestamp of the cursor
+                    if(review.createdAt < createdAtCursor){
+                        return true;
+                    };
+
+                    // handle case if multiple reviews happen to have the same exact timestamp
+                    if(review.createdAt.getTime() === createdAtCursor.getTime()){
+                        // if the timetamps are the same, then compare the ID's
+                        if(review._id.toString() < idCursor.toString()){
+                            return true;
+                        }
+                    };
+
+                    return false;
+                });
+            };
+        };
+
+        filteredReviews.sort((a: any, b: any) => b.createdAt.getTime() - a.createdAt.getTime() || b._id.toString() - a.id.toString());
+
+        const tenReviews = filteredReviews.slice(0, limit);
+        // compute the next cursor / bookmark to send
+        let nextCursor = null;
+        if(filteredReviews.length > limit){
+            const lastIncludedReview = tenReviews[limit - 1];
+            nextCursor = `${lastIncludedReview.createdAt.toString()}|${lastIncludedReview._id.toString()}`;
+        };
+
+        res.json({
+            items: tenReviews,
+            nextCursor,
         });
 
     } catch(error){

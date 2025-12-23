@@ -68,7 +68,9 @@ export const getDetailedRecipe = async (recipeId: string) => {
 
     if(!recipe) throw createHttpError.NotFound("Recipe not found!");
 
-    return recipe;
+    const {reviews, ...recipeWithoutReviews} = recipe.toObject();
+
+    return recipeWithoutReviews;
 };
 
 export const createNewRecipe = async (recipeData: RecipeData) => {

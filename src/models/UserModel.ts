@@ -73,15 +73,15 @@ userSchema.pre<NewUser>("save", async function(next){
         const saltRounds = 12;
         const plainPassword = this.password;
 
-        await bcrypt.hash(plainPassword, saltRounds, (error, hash) => {
-            if(error){
-                logger.error(error);
-                return next(error as Error);
-            };
-
+        try {
+            const hash = await bcrypt.hash(plainPassword, saltRounds);
             this.password = hash;
             next();
-        });
+        } catch(error){
+            logger.error(error);
+            return next(error as Error);
+        }
+
     } else {
         next();
     };
