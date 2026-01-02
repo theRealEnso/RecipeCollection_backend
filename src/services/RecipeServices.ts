@@ -205,6 +205,13 @@ export const addReview = async (userId: string, recipeId: string, rating: number
         recipe.reviews[existingReviewIndex].rating = rating;
         recipe.reviews[existingReviewIndex].comment = comment;
         recipe.reviews[existingReviewIndex].updatedAt = new Date();
+        // recipe.reviews.sort((a: any, b: any) => {
+        //     if(b.updatedAt.getTime() !== a.updatedAt.getTime()){
+        //         return b.updatedAt.getTime() - a.updatedAt.getTime()
+        //     };
+
+        //     return b._id.toString().localeCompare(a._id.toString());
+        // })
     } else {
         // no existing review. Create a new review and push to reviews array
         recipe.reviews.push({
@@ -215,6 +222,12 @@ export const addReview = async (userId: string, recipeId: string, rating: number
             updatedAt: new Date(),
         });
     };
+
+    recipe.reviews.sort((a: any, b: any) => {
+        const dateB = new Date(b.updatedAt);
+        const dateA = new Date(a.updatedAt);
+        return dateB.getTime() - dateA.getTime();
+    });
 
     updateRatings(recipe);
 

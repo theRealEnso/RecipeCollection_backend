@@ -8,14 +8,14 @@ dotenv.config();
 
 // use environment variables
 const PORT = Number(process.env.PORT) || 3001;
-const { DATABASE_URL } = process.env;
+const { DATABASE_URL, LOCAL_DATABASE_URL } = process.env;
 
 //enable mongoDB debug mode for development
 if(process.env.NODE_ENV !== "production"){
     mongoose.set("debug", true);
 };
 
-//establish a connection to our mongoDB atlas cluster
+//  ***********     For connecting to MongoDB Atlas cluster     **********
 const connectToDB = async () => {
     try {
         if(!process.env.DATABASE_URL || !DATABASE_URL || DATABASE_URL.length === 0){
@@ -26,12 +26,32 @@ const connectToDB = async () => {
         }
 
     } catch(error){
-        logger.error(`Errpr connecting to MongoDB Atlas cluster! : ${error}`);
+        logger.error(`Error connecting to MongoDB Atlas cluster! : ${error}`);
         process.exit(1);
     }
 };
 
 connectToDB();
+
+//  ************    For connecting to local MongoDB server  ************
+// const connectToLocalDB = async () => {
+//     try {
+//         if(!process.env.LOCAL_DATABASE_URL || !LOCAL_DATABASE_URL || LOCAL_DATABASE_URL.length === 0){
+//             logger.error(`LOCAL_DATABASE_URL environment variable is either missing or undefined!`);
+//         } else {
+//             await mongoose.connect(LOCAL_DATABASE_URL);
+//             logger.info(`Successfully connected to local MongoDB server!!!`);
+//         }
+
+//     } catch(error){
+//         logger.error(`Error connecting to local MongoDB server! : ${error}`);
+//         process.exit(1);
+//     }
+// };
+
+// connectToLocalDB();
+
+
 
 // ******    set up the server     ******
 let server;

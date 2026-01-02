@@ -18,7 +18,7 @@ import {
     startRecipeGenerationJob,
     getRecipeGenerationJobStatus,
     getGeneratedRecipe,
-    addNewReview,
+    addOrUpdateReview,
     deleteReview,
     getRecipeReviewsPaged
 } from "../controllers/RecipeControllers";
@@ -37,7 +37,7 @@ router.route("/get-cloudinary-signature").get(trimRequest.all, authMiddleware, g
 router.route("/create-cloudinary-image-url").post(trimRequest.all, authMiddleware, createCloudinaryImageUrl);
 
 //          ***** endpoint(s) for recipe ratings, reviews, and comments *****
-router.route("/:recipeId/reviews").post(trimRequest.all, authMiddleware, addNewReview);
+router.route("/:recipeId/reviews").post(trimRequest.all, authMiddleware, addOrUpdateReview);
 router.route("/:recipeId/reviews").delete(trimRequest.all, authMiddleware, deleteReview);
 router.route("/:recipeId/reviews/paged").get(trimRequest.all, authMiddleware, getRecipeReviewsPaged);
 

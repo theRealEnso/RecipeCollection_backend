@@ -200,7 +200,7 @@ export const getRecipeReviewsPaged = async (req: Request, res: Response, next: N
 
         const allReviews = recipe.reviews;
 
-        let filteredReviews = allReviews;
+        let filteredReviews = [...allReviews];
 
         // force limit to always be 10 reviews
         const limit = rawLimit && Number(rawLimit) > RECIPE_REVIEWS_LIMIT ? RECIPE_REVIEWS_LIMIT : RECIPE_REVIEWS_LIMIT;
@@ -208,37 +208,56 @@ export const getRecipeReviewsPaged = async (req: Request, res: Response, next: N
         // handle / process the cursor
         // cursor is going to look something like date|id in some sort of string format
         if(cursor){
-            const [createdAtStr, idStr] = cursor.split("|");
-            if(createdAtStr && idStr){
-                filteredReviews = filteredReviews.filter((review: any) => {
-                    const createdAtCursor = new Date(createdAtStr);
-                    const idCursor = new mongoose.Types.ObjectId(idStr);
-                    // get the next 10 reviews that are older than the createdAt timestamp of the cursor
-                    if(review.createdAt < createdAtCursor){
-                        return true;
-                    };
-
-                    // handle case if multiple reviews happen to have the same exact timestamp
-                    if(review.createdAt.getTime() === createdAtCursor.getTime()){
-                        // if the timetamps are the same, then compare the ID's
-                        if(review._id.toString() < idCursor.toString()){
+            try {
+                const [updatedAtStr, idStr] = cursor.split("|");
+                if(updatedAtStr && idStr){
+                    filteredReviews = filteredReviews.filter((review: any) => {
+                        const updatedAtCursor = new Date(updatedAtStr);
+                        const idCursor = new mongoose.Types.ObjectId(idStr);
+                        // get the next 10 reviews that are older than the createdAt timestamp of the cursor
+                        if(review.updatedAt < updatedAtCursor){
                             return true;
-                        }
-                    };
+                        };
 
-                    return false;
-                });
-            };
+                        // handle case if multiple reviews happen to have the same exact timestamp
+                        if(review.updatedAt.getTime() === updatedAtCursor.getTime()){
+                            // if the timetamps are the same, then compare the ID's
+                            if(review._id.toString() < idCursor.toString()){
+                                return true;
+                            }
+                        };
+
+                        return false;
+                    });
+                };
+            } catch(error){
+                console.error("Cursor parsing error: ", error)
+            }
         };
 
-        filteredReviews.sort((a: any, b: any) => b.createdAt.getTime() - a.createdAt.getTime() || b._id.toString() - a.id.toString());
+        console.log("After filtering and sorting:", filteredReviews.length, "reviews");
+
+        filteredReviews.sort((a: any, b: any) => {
+            if(b.updatedAt.getTime() !== a.updatedAt.getTime()) {
+                return b.updatedAt.getTime() - a.updatedAt.getTime();
+            };
+            
+            if(b.createdAt.getTime() !== a.createdAt.getTime()) {
+                return b.createdAt.getTime() - a.createdAt.getTime();
+            };
+
+            return b._id.toString().localeCompare(a._id.toString());
+        });
 
         const tenReviews = filteredReviews.slice(0, limit);
         // compute the next cursor / bookmark to send
         let nextCursor = null;
         if(filteredReviews.length > limit){
             const lastIncludedReview = tenReviews[limit - 1];
-            nextCursor = `${lastIncludedReview.createdAt.toString()}|${lastIncludedReview._id.toString()}`;
+            nextCursor = `${lastIncludedReview.updatedAt.toISOString()}|${lastIncludedReview._id.toString()}`;
+            console.log("Next cursor:", nextCursor);
+        } else {
+            console.log("No next cursor -- no more reviews");
         };
 
         res.json({
@@ -363,7 +382,7 @@ export const claimRecipe = async (req: Request, res: Response, next: NextFunctio
 
 ///////////////              *** controllers for ratings and reviews ***    ///////////////
 
-export const addNewReview =  async (req: Request, res: Response, next: NextFunction) => {
+export const addOrUpdateReview =  async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = req.user.id;
         const { recipeId } = req.params;

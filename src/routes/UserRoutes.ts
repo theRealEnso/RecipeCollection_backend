@@ -11,9 +11,8 @@ import {
     removeRecipeFromFavorites,
     getAllFavoriteRecipes 
 } from "../controllers/UserControllers";
-import { authMiddleware } from "../middlewares/authMiddleware";
 
-// import { authMiddleware } from "../middlewares/authMiddleware";
+import { authMiddleware } from "../middlewares/authMiddleware";
 
 const router = express.Router();
 
